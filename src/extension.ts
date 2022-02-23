@@ -13,9 +13,12 @@ export function activate(context: vscode.ExtensionContext) {
 			const tsconfigPath = join(root, 'tsconfig.json');
 			if (fs.existsSync(tsconfigPath)) {
 				const projectElements = new ProjectElements(tsconfigPath);
-
-
-
+				projectElements.resolveAllWorkspaceSymbols();
+				console.log('modules', projectElements.modules);
+				console.log('components', projectElements.components);
+				console.log('injectables', projectElements.injectables);
+				
+				
 			} else {
 				vscode.window.showErrorMessage('tsconfig.json cannot be found');
 			}
