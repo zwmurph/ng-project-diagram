@@ -1,25 +1,28 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import { join } from 'path';
+import { ProjectElements } from './projectSymbols';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "ng-project-diagram" is now active!');
+	console.log('Extension is active');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('ng-project-diagram.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from NG Project Diagram!');
+	const diagramCmd = vscode.commands.registerCommand('ng-project-diagram.diagram', () => {
+		// Get workspace root and check presence
+		const root = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+		if (root) {
+			const tsconfigPath = join(root, 'tsconfig.json');
+			if (fs.existsSync(tsconfigPath)) {
+				const projectElements = new ProjectElements(tsconfigPath);
+
+
+
+			} else {
+				vscode.window.showErrorMessage('tsconfig.json cannot be found');
+			}
+		}
 	});
 
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(diagramCmd);
 }
 
 // this method is called when your extension is deactivated
