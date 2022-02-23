@@ -23,7 +23,7 @@ export class ProjectElements {
 
     /**
      * Resolves all symbols within the project.
-     * MUST be called before accessing symbols: 'modules', 'components', 'injectables'.
+     * MUST be called before accessing symbols or their lookups.
      */
     public resolveAllWorkspaceSymbols(): void {
         this.workspaceSymbols = new WorkspaceSymbols(this.tsconfigPath);
