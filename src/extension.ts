@@ -17,8 +17,8 @@ export function activate(context: vscode.ExtensionContext) {
 				console.log('modules', projectElements.modules);
 				console.log('components', projectElements.components);
 				console.log('injectables', projectElements.injectables);
-				
-				
+
+				projectElements.getWorkspaceSymbolLookup('module');
 			} else {
 				vscode.window.showErrorMessage('tsconfig.json cannot be found');
 			}

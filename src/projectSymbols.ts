@@ -1,4 +1,5 @@
 import { WorkspaceSymbols } from "ngast";
+import { getLookupFromArray, LookupObject } from "./utils";
 
 export class ProjectElements {
     private workspaceSymbols: WorkspaceSymbols;
@@ -31,17 +32,26 @@ export class ProjectElements {
         this._projectComponents = this.resolveProjectComponents();
         this._projectInjectables = this.resolveProjectInjectables();
 
-        
-        // const modulesLookup = getLookupFromArray(this._projectModules);
-        // const componentsLookup = getLookupFromArray(this._projectComponents);
-        // const injectablesLookup = getLookupFromArray(this._projectInjectables);
-        // console.log("modulesLookup", modulesLookup);
-        // console.log("componentsLookup", componentsLookup);
-        // console.log('injectablesLookup', injectablesLookup);
+        // TODO: Directives and pipes at a later time, if needed
+        // this.workspaceSymbols.getAllDirectives();
+        // this.workspaceSymbols.getAllPipes();
+    }
 
-        // TODO: Directives and pipes at a later time
-        // console.log('directives', this.workspaceSyms.getAllDirectives());
-        // console.log('pipes', this.workspaceSyms.getAllPipes());
+    /**
+     * Gets a lookup for a given symbol type.
+     * @param symbolType 'module' | 'component' | 'injectable'.
+     * @returns Lookup object or undefined if invalid `symbolType` is provided.
+     */
+    public getWorkspaceSymbolLookup(symbolType: 'module' | 'component' | 'injectable'): LookupObject<ProjectModule | ProjectComponent | ProjectInjectable> | undefined {
+        if (symbolType === 'module') {
+            return getLookupFromArray(this._projectModules);
+        } else if (symbolType === 'component') {
+            return getLookupFromArray(this._projectComponents);
+        } else if (symbolType === 'injectable') {
+            return getLookupFromArray(this._projectInjectables);
+        } else {
+            return undefined;
+        }
     }
 
     // Gets project modules
