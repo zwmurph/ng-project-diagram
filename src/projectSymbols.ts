@@ -1,6 +1,9 @@
 import { WorkspaceSymbols } from "ngast";
 import { getLookupFromArray, LookupObject } from "./utils";
 
+/**
+ * Class that resolves and holds all symbols for the Angular project
+ */
 export class ProjectElements {
     private workspaceSymbols: WorkspaceSymbols;
 
