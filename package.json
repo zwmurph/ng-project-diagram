@@ -21,6 +21,11 @@
       }
     ],
     "menus": {
+      "commandPalette": [{
+        "command": "ng-project-diagram.diagram",
+        "title": "Show NG Project Diagram",
+        "when": "workbenchState != empty"
+      }],
       "explorer/context": [{
         "when": "filesExplorerFocus",
         "command": "ng-project-diagram.diagram"
