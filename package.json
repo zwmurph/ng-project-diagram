@@ -19,7 +19,13 @@
         "command": "ng-project-diagram.diagram",
         "title": "Show NG Project Diagram"
       }
-    ]
+    ],
+    "menus": {
+      "explorer/context": [{
+        "when": "filesExplorerFocus",
+        "command": "ng-project-diagram.diagram"
+      }]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
