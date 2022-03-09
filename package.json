@@ -21,15 +21,19 @@
       }
     ],
     "menus": {
-      "commandPalette": [{
-        "command": "ng-project-diagram.diagram",
-        "title": "Show NG Project Diagram",
-        "when": "workbenchState != empty"
-      }],
-      "explorer/context": [{
-        "when": "filesExplorerFocus",
-        "command": "ng-project-diagram.diagram"
-      }]
+      "commandPalette": [
+        {
+          "command": "ng-project-diagram.diagram",
+          "title": "Show NG Project Diagram",
+          "when": "workbenchState != empty"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "filesExplorerFocus",
+          "command": "ng-project-diagram.diagram"
+        }
+      ]
     }
   },
   "scripts": {
@@ -57,6 +61,8 @@
     "@angular/compiler": "^10.2.5",
     "@angular/compiler-cli": "^10.2.5",
     "@angular/core": "^10.2.5",
-    "ngast": "^0.5.0"
+    "@ts-graphviz/node": "^0.4.0",
+    "ngast": "^0.5.0",
+    "ts-graphviz": "^0.13.2"
   }
 }

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { join } from 'path';
 import { ProjectElements } from './projectElements';
-import { DiagramPanel } from './diagramPanel';
+import { ProjectDiagram } from './projectDiagram';
 
 // Event handler for extension activation
 export function activate(context: vscode.ExtensionContext) {
@@ -11,10 +11,10 @@ export function activate(context: vscode.ExtensionContext) {
 	// Define the command and add to the extension context
 	context.subscriptions.push(vscode.commands.registerCommand('ng-project-diagram.diagram', () => {
 		// Get workspace root and check presence
-		const root = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-		if (root) {
+		const wsRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+		if (wsRoot) {
 			// Find tsconfig file
-			const tsconfigPath = join(root, 'tsconfig.json');
+			const tsconfigPath = join(wsRoot, 'tsconfig.json');
 			if (fs.existsSync(tsconfigPath)) {
 				const projectElements = new ProjectElements(tsconfigPath);
 				projectElements.resolveAllWorkspaceSymbols();
@@ -24,7 +24,17 @@ export function activate(context: vscode.ExtensionContext) {
 				console.log('injectables', projectElements.injectables);
 				console.log('modules lookup', projectElements.getWorkspaceSymbolLookup('module'));
 
-				DiagramPanel.display();
+				// DiagramPanel.display();
+				// Test for DOT language
+
+				const projectDiagram = new ProjectDiagram(wsRoot);
+				projectDiagram.generateDotDiagram();
+				projectDiagram.saveDiagramAsImage('svg');
+
+
+
+
+
 
 
 			} else {
