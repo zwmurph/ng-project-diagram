@@ -2,7 +2,7 @@ import { WorkspaceSymbols } from "ngast";
 import { getLookupFromArray, LookupObject } from "./utils";
 
 /**
- * Class that resolves and holds all symbols for the Angular project
+ * Class that resolves and holds all symbols for the Angular project.
  */
 export class ProjectElements {
     private workspaceSymbols: WorkspaceSymbols;
@@ -57,7 +57,10 @@ export class ProjectElements {
         }
     }
 
-    // Gets project modules
+    /**
+     * Gets project modules.
+     * @returns Array of modules.
+     */
     private resolveProjectModules(): ProjectModule[] {
         return this.workspaceSymbols.getAllModules().map((module) => ({
             name: module.name,
@@ -68,7 +71,10 @@ export class ProjectElements {
         } as ProjectModule));
     }
 
-    // Gets project components
+    /**
+     * Gets project components.
+     * @returns Array of components.
+     */
     private resolveProjectComponents(): ProjectComponent[] {
         return this.workspaceSymbols.getAllComponents().map((component) => {
             // Map details from all found components
@@ -91,7 +97,10 @@ export class ProjectElements {
         });
     }
 
-    // Gets project injectables (services)
+    /**
+     * Gets project injectables (services).
+     * @returns Array of injectables.
+     */
     private resolveProjectInjectables(): ProjectInjectable[] {
         // Map details from all found injectables
         return this.workspaceSymbols.getAllInjectable().map((injectable) => ({
