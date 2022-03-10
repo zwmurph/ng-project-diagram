@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { digraph, toDot } from 'ts-graphviz';
 
 /**
- * Class to hold logic for creating the project diagram from project elements 
+ * Class to hold logic for creating the project diagram from project elements.
  */
 export class ProjectDiagram {
     private _dotDiagram: string;
@@ -15,7 +15,7 @@ export class ProjectDiagram {
     constructor(private readonly workspaceRootPath: string) {}
 
     /**
-     * Gets the project diagram.
+     * Gets the project diagram. MUST be called before saving the diagram.
      * @returns String value of diagram in DOT language.
      */
     public generateDotDiagram(): void {
@@ -36,26 +36,30 @@ export class ProjectDiagram {
         const dot = toDot(g);
 
         console.log('DOT:', dot);
-        this._dotDiagram = dot;        
+        this._dotDiagram = dot;
     }
     
     /**
-     * TODO: Add comment
-     * @param fileFormat 
+     * Saves diagram as an image. Uses Graphviz DOT engine for generation.
+     * @param fileFormat Desired image output format.
      */
     public async saveDiagramAsImage(fileFormat: 'jpg' | 'png' | 'svg' = 'png'): Promise<void> {
-        // Check if an output folder already exists
-        const outputFolder = join(this.workspaceRootPath, '.ng-project-diagram');
-        if (!(fs.existsSync(outputFolder) && fs.lstatSync(outputFolder).isDirectory())) {
-            // Create the new folder
-            fs.mkdirSync(outputFolder);
+        // Check DOT diagram has been generated
+        if (this._dotDiagram != null) {
+            // Check if an output folder already exists
+            const outputFolder = join(this.workspaceRootPath, '.ng-project-diagram');
+            if (!(fs.existsSync(outputFolder) && fs.lstatSync(outputFolder).isDirectory())) {
+                // Create the new folder
+                fs.mkdirSync(outputFolder);
+            }
+
+            // Export the diagram to the specified file type
+            await exportToFile(this._dotDiagram, {
+                format: fileFormat,
+                output: join(outputFolder, 'diagram.' + fileFormat)
+            });
+        } else {
+            throw new Error('DOT Diagram is undefined. Generate it before trying to save.');
         }
-
-        const outputPath = join(outputFolder, 'diagram.' + fileFormat);
-        await exportToFile(this._dotDiagram, {
-            format: fileFormat,
-            output: outputPath
-        });
     }
-
 }
