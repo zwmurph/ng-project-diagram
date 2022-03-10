@@ -80,7 +80,6 @@ export class ProjectElements {
             };
 
             // Find names of injected dependencies in component and add to details list
-            // eslint-disable-next-line
             if (component.deps != null && component.deps !== "invalid" && component.deps.length > 0) {
                 component.deps.forEach((dependency) => {
                     const dependencyObj = JSON.parse(JSON.stringify(dependency));

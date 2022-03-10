@@ -1,6 +1,5 @@
 // Converts an array of objects to a lookup of the same objects
 export function getLookupFromArray<T extends { name: string }>(array: T[]): LookupObject<T> | undefined {
-    // eslint-disable-next-line
     if (array == null || array.length === 0) {
         return undefined;
     } else {
