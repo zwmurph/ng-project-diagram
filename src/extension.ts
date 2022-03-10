@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import { join } from 'path';
 import { ProjectElements } from './projectElements';
 import { ProjectDiagram } from './projectDiagram';
+import { DiagramPanel } from './diagramPanel';
 
 // Event handler for extension activation
 export function activate(context: vscode.ExtensionContext) {
@@ -16,6 +17,11 @@ export function activate(context: vscode.ExtensionContext) {
 			// Find tsconfig file
 			const tsconfigPath = join(wsRoot, 'tsconfig.json');
 			if (fs.existsSync(tsconfigPath)) {
+				// Display an initial webview panel
+				// TODO: Add a loading spinner
+				DiagramPanel.display(context.extensionUri);
+
+				// Resolve all workspace symbols in the project
 				const projectElements = new ProjectElements(tsconfigPath);
 				projectElements.resolveAllWorkspaceSymbols();
 
@@ -24,17 +30,15 @@ export function activate(context: vscode.ExtensionContext) {
 				console.log('injectables', projectElements.injectables);
 				console.log('modules lookup', projectElements.getWorkspaceSymbolLookup('module'));
 
-				// DiagramPanel.display();
-				// Test for DOT language
-
+				// Generate a DOT diagram from the project elements
 				const projectDiagram = new ProjectDiagram(wsRoot);
 				projectDiagram.generateDotDiagram();
-				projectDiagram.saveDiagramAsImage('svg');
-
-
-
-
-
+				
+				// Display the created DOT diagram on the webview panel
+				DiagramPanel.activePanel?.showDiagramOnPanel(projectDiagram.dotDiagram);
+				
+				
+				// projectDiagram.saveDiagramAsImage('svg');
 
 
 			} else {
@@ -42,6 +46,8 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}
 	}));
+
+	// TODO: Register a serializer for the webview panel, so it reloads on editor close/open
 }
 
 // Event handler for extension deactivation
