@@ -1,11 +1,26 @@
 html {
-    height: 100%;
+    height: 95%;
 }
-
 body {
-    height: inherit;
+    min-height: 100%;
 }
 
 #project-network {
-    height: inherit;
+    height: 100vh;
+}
+
+.toolbar {
+    margin-top: 1rem;
+    padding: 0 0.25rem 0.25rem 0.25rem;
+    border-bottom: 1px solid var(--vscode-focusBorder);
+}
+
+.toolbar button {
+    width: fit-content;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+#network-data-url {
+    display: none;
 }

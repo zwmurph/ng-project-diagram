@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (fs.existsSync(tsconfigPath)) {
 				// Display an initial webview panel
 				// TODO: Add a loading spinner
-				DiagramPanel.display(context.extensionUri);
+				DiagramPanel.display(context.extensionUri, wsRoot);
 
 				// Resolve all workspace symbols in the project
 				const projectElements = new ProjectElements(tsconfigPath);

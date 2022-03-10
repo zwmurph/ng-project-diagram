@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { getToken } from './utils';
+import { getToken, saveDataUrlAsImage } from './utils';
 
 /**
  * Class to hold logic for the diagram panel.
@@ -10,10 +10,12 @@ export class DiagramPanel {
     private readonly _panel: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
     private _extensionUri: vscode.Uri;
+    private _workspaceRootPath: string;
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, workspaceRootPath: string) {
         this._panel = panel;
         this._extensionUri = extensionUri;
+        this._workspaceRootPath = workspaceRootPath;
 
         // Set the webview's initial content
         this.updatePanelContent();
@@ -38,13 +40,27 @@ export class DiagramPanel {
                 this.updatePanelContent();
             }
         }, null, this._disposables);
+
+        // Event handler for messages received from the webview
+        this._panel.webview.onDidReceiveMessage((message) => {
+            if (message.command === 'NETWORK-DATA-URL') {
+                try {
+                    saveDataUrlAsImage(message.data, this._workspaceRootPath);
+                    vscode.window.showInformationMessage('Download successful');
+                } catch (error) {
+                    console.error(error);
+                    vscode.window.showErrorMessage('Download unsuccessful');
+                }
+            }
+        });
     }
 
     /**
      * Creates or shows a diagram panel.
      * @param extensionUri Extension URI, used for creating webview options.
+     * @param workspaceRootPath Path of the root of the open workspace.
      */
-    public static display(extensionUri: vscode.Uri): void {
+    public static display(extensionUri: vscode.Uri, workspaceRootPath: string): void {
         // Show the panel if it already exists, in the editor column it exists in
         if (DiagramPanel.activePanel) {
             DiagramPanel.activePanel._panel.reveal(DiagramPanel.activePanel._panel.viewColumn);
@@ -58,7 +74,7 @@ export class DiagramPanel {
             vscode.ViewColumn.One,
             DiagramPanel.getWebviewOptions(extensionUri)
         );
-        DiagramPanel.activePanel = new DiagramPanel(newPanel, extensionUri);
+        DiagramPanel.activePanel = new DiagramPanel(newPanel, extensionUri, workspaceRootPath);
     }
 
     /**
@@ -89,6 +105,7 @@ export class DiagramPanel {
      */
     private updatePanelContent(): void {
         this._panel.webview.html = this.getWebviewContent();
+        // TODO: Re-grab DOT content and trigger to display again? (Fix for diagram not appearing sometimes?)
     }
 
     /**
@@ -98,6 +115,7 @@ export class DiagramPanel {
     private getWebviewContent(): string {
         const webview: vscode.Webview = this._panel.webview;
 
+        // TODO: Minify all the external files the webview will use
         // Create the URI to load the main script that will run in the webview
         const scriptPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js');
         const scriptUri = (scriptPath).with({ 'scheme': 'vscode-resource' });
@@ -128,14 +146,15 @@ export class DiagramPanel {
                     type="text/javascript"
                     src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
                 ></script>
-
                 <link href="${resetStylesUri}" rel="stylesheet">
                 <link href="${vscodeStylesUri}" rel="stylesheet">
                 <link href="${mainStylesUri}" rel="stylesheet">
-                </head>
+            </head>
             <body>
-                <h1>Hello</h1>
-                <a id="canvas-img" download="filename">Download</a>
+                <div class="toolbar">
+                    <button id="download-btn">DOWNLOAD</button>
+                </div>
+                <div id="network-data-url"></div>
                 <div id="project-network"></div>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>
