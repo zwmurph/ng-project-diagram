@@ -61,9 +61,7 @@
     "@angular/compiler": "^10.2.5",
     "@angular/compiler-cli": "^10.2.5",
     "@angular/core": "^10.2.5",
-    "@ts-graphviz/node": "^0.4.0",
     "ngast": "^0.5.0",
-    "ts-graphviz": "^0.13.2",
     "vis-network": "^9.1.0"
   }
 }
