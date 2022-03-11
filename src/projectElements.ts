@@ -111,7 +111,7 @@ export class ProjectElements {
     }
 }
 
-interface ProjectModule {
+export interface ProjectModule {
     name: string;
     path: string;
     imports: string[];
@@ -119,14 +119,14 @@ interface ProjectModule {
     providers: string[] | null;
 };
 
-interface ProjectComponent {
+export interface ProjectComponent {
     name: string,
     path: string,
     selector: string,
     injectedDependencies: string[],
 }
 
-interface ProjectInjectable {
+export interface ProjectInjectable {
     name: string,
     path: string,
     providedIn: string | null,

@@ -30,9 +30,13 @@ function displayDiagram(dotDiagramString) {
         },
         'layout': {
             'randomSeed': 1,
+            'hierarchical': {
+                'sortMethod': 'directed',
+            },
         },
     };
     const data = vis.parseDOTNetwork(dotDiagramString);
+    console.log('options', data.options);
     
     // Create a new Vis network and assign to global variable
     const network = new vis.Network(container, data, options);
