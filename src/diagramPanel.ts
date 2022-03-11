@@ -155,7 +155,6 @@ export class DiagramPanel {
                 <div class="toolbar">
                     <button id="download-btn">DOWNLOAD</button>
                 </div>
-                <div id="network-data-url"></div>
                 <div id="project-network"></div>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>
