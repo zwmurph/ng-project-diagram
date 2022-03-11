@@ -19,7 +19,7 @@
 
 /**
  * Parses the network data into a Vis.js network and displays according to the options.
- * @param {*} networkData Nodes and Edges to display.
+ * @param {*} networkMetadata Nodes and Edges to display along with Options for the Network.
  */
 function displayDiagram(networkMetadata) {
     console.log('data', networkMetadata.data);
@@ -29,31 +29,16 @@ function displayDiagram(networkMetadata) {
     const container = document.getElementById('project-network');
     const network = new vis.Network(container, networkMetadata.data, networkMetadata.options);
    
-
-    setTimeout(()=>{
-        network.setOptions({
-            layout: {
-                hierarchical: false
-            },
-        });
-    }, 1000);
-
-    // Post-stabilisation listener for network
-    // network.on('stabilized', function() {
-    //     console.log('stabilized');
-    //     network.setOptions({
-    //         physics: {
-    //             enabled: false,
-    //         },
-    //         layout: {
-    //             hierarchical: false,
-    //         },
-    //     });
-    // });
+    // Only trigger this listener once, after the first drawing of the canvas
+    network.once('afterDrawing', () => {
+        // Disable hierarchical layout - is only needed for initial render. This allows the user to freely move
+        //   nodes on the canvas
+        network.setOptions({ layout: { hierarchical: false } });
+    });
 
     // Post-drawing listener for network
     network.on('afterDrawing', function(ctx) {
-        // console.log('after drawing');
+        console.log('after drawing');
         const dataURL = ctx.canvas.toDataURL();
         document.getElementById('network-data-url').setAttribute('dataUrl', dataURL);
     });
