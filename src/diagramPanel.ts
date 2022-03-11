@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { ProjectDiagramMetadata } from './projectDiagram';
 import { getToken, saveDataUrlAsImage } from './utils';
 
 /**
@@ -78,12 +79,12 @@ export class DiagramPanel {
     }
 
     /**
-     * Shows a DOT diagram on the webview panel.
-     * @param dotDiagram String value of DOT diagram.
+     * Shows a diagram on the webview panel.
+     * @param diagramMetadata Metadata of the network.
      */
-    public showDiagramOnPanel(dotDiagram: string): void {
+    public showDiagramOnPanel(diagramMetadata: ProjectDiagramMetadata): void {
         // Send serialized JSON to the webview
-        this._panel.webview.postMessage({ command: 'DISPLAY-DIAGRAM', data: dotDiagram });
+        this._panel.webview.postMessage({ command: 'DISPLAY-DIAGRAM', data: diagramMetadata });
     }
 
     /**
@@ -138,7 +139,7 @@ export class DiagramPanel {
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline';">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline'; img-src data:;">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>NG Project Diagram</title>
                 <script

@@ -18,62 +18,23 @@
 }());
 
 /**
- * Parses the DOT diagram into a Vis.js network and displays according to the options.
- * @param {*} dotDiagramString DOT Diagram to display.
+ * Parses the network data into a Vis.js network and displays according to the options.
+ * @param {*} networkData Nodes and Edges to display.
  */
-function displayDiagram(dotDiagramString) {
-    // Get container, options, and parse DOT into Vis.js network
+function displayDiagram(networkMetadata) {
+    console.log('data', networkMetadata.data);
+    console.log('options', networkMetadata.options);
+
+    // Get the container and create a new Vis.js network
     const container = document.getElementById('project-network');
-    // const options = {
-    //     'physics': {
-    //         'stabilization': false,
-    //         'barnesHut': {
-    //             'springConstant': 0,
-    //             'avoidOverlap': 0.1
-    //         },
-    //         'hierarchicalRepulsion': {
-    //             'nodeDistance': 140,
-    //         },
-    //     },
-    //     'layout': {
-    //         'randomSeed': 1,
-    //         'hierarchical': {
-    //             'sortMethod': 'directed',
-    //             'levelSeparation': 100,
-    //         },
-    //     },
-    // };
-
-    const options = {
-        nodes: { borderWidth: 2 },
-        edges: { length: 300, smooth: false },
-        physics: { enabled: false },
-        layout: {
-            improvedLayout: true,
-            hierarchical: {
-                sortMethod: 'directed',
-                levelSeparation: 200,
-                nodeSpacing: 200,
-                treeSpacing: 200,
-            },
-        },
-        interaction: { hover: true },
-    };
-
-    const data = vis.parseDOTNetwork(dotDiagramString);
-    console.log('options', data.options);
-    
-    // Create a new Vis network and assign to global variable
-    const network = new vis.Network(container, data, options);
+    const network = new vis.Network(container, networkMetadata.data, networkMetadata.options);
+   
 
     setTimeout(()=>{
         network.setOptions({
             layout: {
                 hierarchical: false
             },
-            physics: {
-                stabilization: true
-            }
         });
     }, 1000);
 

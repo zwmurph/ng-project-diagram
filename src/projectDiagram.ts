@@ -1,165 +1,211 @@
-import { exportToFile } from '@ts-graphviz/node';
-import { join } from 'path';
-import * as fs from 'fs';
-import { toDot, Node, Digraph, Edge, NodeAttributes } from 'ts-graphviz';
 import { ProjectComponent, ProjectInjectable, ProjectModule } from './projectElements';
 import { LookupObject } from './utils';
+import { Data, Edge, Node, NodeOptions, Options } from 'vis-network';
 
 /**
  * Class to hold logic for creating the project diagram from project elements.
  */
 export class ProjectDiagram {
-    private _dotDiagram: string;
-    public get dotDiagram(): string {
-        return this._dotDiagram;
-    }
 
-    constructor(private readonly workspaceRootPath: string) {}
+    private constructor() {}
 
     /**
-     * Gets the project diagram. MUST be called before saving the diagram.
-     * @returns String value of diagram in DOT language.
+     * Gets the project diagram network data and options. Used by Vis.js to create the diagram.
+     * @param modules List of project modules to display.
+     * @param components List of project components to display.
+     * @param injectables List of project injectables to display.
+     * @returns Network data and options for Vis.js.
      */
-    public generateDotDiagram(
+    public static getProjectDiagramData(
         modules: ProjectModule[],
         components: ProjectComponent[],
-        injectables: ProjectInjectable[],
-        modulesLookup: LookupObject<ProjectModule>,
-        componentsLookup: LookupObject<ProjectComponent>,
-        injectablesLookup: LookupObject<ProjectInjectable>
-    ): void {
-        // Create a container for the network
-        const digraph = new Digraph();
+        injectables: ProjectInjectable[]
+    ): ProjectDiagramMetadata {
+        // The diagram created with Vis.js uses network terminology. Create containers for the network nodes and edges
+        const networkNodes: Node[] = [];
+        const networkEdges: Edge[] = [];
 
-        // Specify options for each project element type
-        const moduleOptions: NodeAttributes = {
-            shape: 'folder',
-        };
-        const componentOptions: NodeAttributes = {
-            shape: 'box',
-            style: 'rounded',
-        };
-        const injectableOptions: NodeAttributes = {
-            shape: 'ellipse',
-        };
+        // Create lookup for created nodes
+        const networkNodesLookup: LookupObject<Node> = {};
         
         // Create nodes
         modules.forEach((module) => {
-            digraph.addNode(new Node(module.name, moduleOptions));
+            const moduleNode: Node = { id: module.name, label: module.name, group: 'module' };
+            networkNodes.push(moduleNode);
+            networkNodesLookup[module.name] = moduleNode;
         });
         components.forEach((component) => {
-            digraph.addNode(new Node(component.name, componentOptions));
+            const componentNode: Node = { id: component.name, label: component.name, group: 'component' };
+            networkNodes.push(componentNode);
+            networkNodesLookup[component.name] = componentNode;
         });
         injectables.forEach((injectable) => {
-            digraph.addNode(new Node(injectable.name, injectableOptions));
+            const injectableNode: Node = { id: injectable.name, label: injectable.name, group: 'injectable' };
+            networkNodes.push(injectableNode);
+            networkNodesLookup[injectable.name] = injectableNode;
         });
 
         // Create edges
-        modules.forEach((module) => {
-            // Make sure the module has been added to the digraph before continuing
-            const nodeFrom = digraph.getNode(module.name);
-            if (nodeFrom == null) {
-                return;
-            }
+        modules.forEach((module: ProjectModule) => {
+            // Get the node representing the current iterating module
+            const fromNode = networkNodesLookup[module.name];
 
             // Connect each module to other modules
-            if (module.imports.length > 0) {
-                module.imports.forEach((imp) => {
-                    const lookupModule = modulesLookup[imp];
-                    if (lookupModule != null) {
-                        const nodeTo = digraph.getNode(lookupModule.name);
-                        if (nodeTo != null) {
-                            digraph.addEdge(new Edge([nodeFrom, nodeTo]));
-                        }
-                    } else {
-                        const newNode = new Node(imp, moduleOptions);
-                        digraph.addNode(newNode);
-                        digraph.addEdge(new Edge([nodeFrom, newNode]));
-                    }
-                });
-            }
+            module.imports.forEach((moduleImport: string) => {
+                // Check if the imported module exists in the network node lookup
+                const toNode = networkNodesLookup[moduleImport];
+                if (toNode != null) {
+                    networkEdges.push({
+                        id: `${fromNode.id}->${toNode.id}`,
+                        from: fromNode.id,
+                        to: toNode.id,
+                    } as Edge);
+                } else {
+                    // If the node to connect to doesn't exist yet, this means it is an external module
+                    //   - not part of 'modules' - so create a node for it
+                    const externalModuleNode: Node = { id: moduleImport, label: moduleImport, group: 'externalModule' };
+                    networkNodes.push(externalModuleNode);
+                    networkNodesLookup[moduleImport] = externalModuleNode;
+
+                    // And create and edge to it
+                    networkEdges.push({
+                        id: `${fromNode.id}->${externalModuleNode.id}`,
+                        from: fromNode.id,
+                        to: externalModuleNode.id,
+                    } as Edge);
+                }
+            });
 
             // Connect each module to its components
-            if (module.declarations.length > 0) {
-                module.declarations.forEach((decl) => {
-                    const lookupComponent = componentsLookup[decl];
-                    if (lookupComponent != null) {
-                        const nodeTo = digraph.getNode(lookupComponent.name);
-                        if (nodeTo != null) {
-                            digraph.addEdge(new Edge([nodeFrom, nodeTo]));
-                        }
-                    } else {
-                        const newNode = new Node(decl, componentOptions);
-                        digraph.addNode(newNode);
-                        digraph.addEdge(new Edge([nodeFrom, newNode]));
-                    }
-                });
-            }
+            module.declarations.forEach((moduleDeclaration: string) => {
+                // Make sure the declaration exists in the network node lookup
+                const toNode = networkNodesLookup[moduleDeclaration];
+                if (toNode != null) {
+                    // Create an edge
+                    networkEdges.push({
+                        id: `${fromNode.id}->${toNode.id}`,
+                        from: fromNode.id,
+                        to: toNode.id,
+                    } as Edge);
+                }
+            });
         });
 
         // Connect each component to dependencies it injects
-        components.forEach((component) => {
-            // Make sure the component has been added to the digraph before continuing
-            const nodeFrom = digraph.getNode(component.name);
-            if (nodeFrom == null) {
-                return;
-            }
+        components.forEach((component: ProjectComponent) => {
+            // Get the node representing the current iterating component
+            const fromNode = networkNodesLookup[component.name];
 
-            if (component.injectedDependencies.length > 0) {
-                component.injectedDependencies.forEach((injDep) => {
-                    const lookupInjectable = injectablesLookup[injDep];
-                    if (lookupInjectable != null) {
-                        const nodeTo = digraph.getNode(lookupInjectable.name);
-                        if (nodeTo != null) {
-                            digraph.addEdge(new Edge([nodeFrom, nodeTo]));
-                        }
-                    } else {
-                        const newNode = new Node(injDep, injectableOptions);
-                        digraph.addNode(newNode);
-                        digraph.addEdge(new Edge([nodeFrom, newNode]));
-                    }
-                });
-            }
+            component.injectedDependencies.forEach((componentInjectable: string) => {
+                // Check if the injected dependency exists in the network node lookup
+                const toNode = networkNodesLookup[componentInjectable];
+                if (toNode != null) {
+                    networkEdges.push({
+                        id: `${fromNode.id}->${toNode.id}`,
+                        from: fromNode.id,
+                        to: toNode.id,
+                    } as Edge);
+                } else {
+                    // If the node to connect to doesn't exist yet, this means it is an external injected dependency
+                    //   - not part of 'injectables' - so create a node for it
+                    const externalInjectableNode: Node = {
+                        id: componentInjectable,
+                        label: componentInjectable,
+                        group: 'externalInjectable'
+                    };
+                    networkNodes.push(externalInjectableNode);
+                    networkNodesLookup[componentInjectable] = externalInjectableNode;
+
+                    // And create and edge to it
+                    networkEdges.push({
+                        id: `${fromNode.id}->${externalInjectableNode.id}`,
+                        from: fromNode.id,
+                        to: externalInjectableNode.id,
+                    } as Edge);
+                }
+            });
         });
 
-        const dot = toDot(digraph);
-        console.log('DOT:', dot);
-        this._dotDiagram = dot;
-
-        // const nodeA2 = g.createNode('A_node2');
-        // g.createEdge([nodeA1, nodeA2]);
-        // const nodeB1 = g.createNode('B_node1');
-        // const nodeB2 = g.createNode('B_node2');
-        // g.createEdge([nodeB1, nodeB2]);
-        // const node1 = g.createNode('node1');
-        // const node2 = g.createNode('node2');
-        // g.createEdge([node1, node2]);
-        // const dot = toDot(g);
-        // console.log('DOT:', dot);
-        // this._dotDiagram = dot;
+        // Return network data for the project
+        return {
+            data: { nodes: networkNodes, edges: networkEdges },
+            options: this.getNetworkOptions(),
+        } as ProjectDiagramMetadata;
     }
-    
-    /**
-     * Saves diagram as an image. Uses Graphviz DOT engine for generation.
-     * @param fileFormat Desired image output format.
-     */
-    public async saveDiagramAsImage(fileFormat: 'jpg' | 'png' | 'svg' = 'png'): Promise<void> {
-        // Check DOT diagram has been generated
-        if (this._dotDiagram != null) {
-            // Check if an output folder already exists
-            const outputFolder = join(this.workspaceRootPath, '.ng-project-diagram');
-            if (!(fs.existsSync(outputFolder) && fs.lstatSync(outputFolder).isDirectory())) {
-                // Create the new folder
-                fs.mkdirSync(outputFolder);
-            }
 
-            // Export the diagram to the specified file type
-            await exportToFile(this._dotDiagram, {
-                format: fileFormat,
-                output: join(outputFolder, 'diagram.' + fileFormat)
-            });
-        } else {
-            throw new Error('DOT Diagram is undefined. Generate it before trying to save.');
-        }
+    /**
+     * Get network options. Includes general and node group options.
+     * @returns Options object.
+     */
+    private static getNetworkOptions(): Options {
+        // General options for the network as a whole
+        // const generalOptions: Options = {
+        //     'physics': {
+        //         'stabilization': false,
+        //         'barnesHut': {
+        //             'springConstant': 0,
+        //             'avoidOverlap': 0.1
+        //         },
+        //         'hierarchicalRepulsion': {
+        //             'nodeDistance': 140,
+        //         },
+        //     },
+        //     'layout': {
+        //         'randomSeed': 1,
+        //         'hierarchical': {
+        //             'sortMethod': 'directed',
+        //             'levelSeparation': 100,
+        //         },
+        //     },
+        // };
+        const generalOptions: Options = {
+            nodes: { borderWidth: 2 },
+            edges: { length: 300, smooth: false, arrows: 'to' },
+            physics: { enabled: false },
+            layout: {
+                improvedLayout: true,
+                hierarchical: {
+                    sortMethod: 'directed',
+                    levelSeparation: 200,
+                    nodeSpacing: 200,
+                    treeSpacing: 200,
+                },
+            },
+            interaction: {
+                hover: true,
+                navigationButtons: true,
+            },
+        };
+
+        // Options for node groups, individual node options will override these
+        const moduleNodeOptions: NodeOptions = {
+            shape: 'box',
+            shapeProperties: {
+                borderRadius: 0,
+            },
+        };
+        const componentNodeOptions: NodeOptions = {
+            shape: 'box',
+        };
+        const injectableNodeOptions: NodeOptions = {
+            shape: 'ellipse',
+        };
+        const allGroupOptions: Options = {
+            groups: {
+                module: moduleNodeOptions,
+                externalModule: moduleNodeOptions, // TODO: Specify unique options for external modules
+                component: componentNodeOptions,
+                injectable: injectableNodeOptions,
+                externalInjectable: injectableNodeOptions, // TODO: Specify unique options for external injectables
+            },
+        };
+
+        // Return all options combined together
+        return {...generalOptions, ...allGroupOptions};
     }
 }
+
+export type ProjectDiagramMetadata = {
+    data: Data,
+    options: Options,
+};

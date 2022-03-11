@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { join } from 'path';
-import { ProjectComponent, ProjectElements, ProjectInjectable, ProjectModule } from './projectElements';
-import { ProjectDiagram } from './projectDiagram';
+import { ProjectElements } from './projectElements';
+import { ProjectDiagram, ProjectDiagramMetadata } from './projectDiagram';
 import { DiagramPanel } from './diagramPanel';
-import { LookupObject } from './utils';
 
 // Event handler for extension activation
 export function activate(context: vscode.ExtensionContext) {
@@ -26,24 +25,15 @@ export function activate(context: vscode.ExtensionContext) {
 				const projectElements = new ProjectElements(tsconfigPath);
 				projectElements.resolveAllWorkspaceSymbols();
 
-				// Generate a DOT diagram from the project elements
-				const projectDiagram = new ProjectDiagram(wsRoot);
-				projectDiagram.generateDotDiagram(
+				// Get project diagram data
+				const diagramData: ProjectDiagramMetadata = ProjectDiagram.getProjectDiagramData(
 					projectElements.modules,
 					projectElements.components,
-					projectElements.injectables,
-					projectElements.getWorkspaceSymbolLookup('module') as LookupObject<ProjectModule>,
-					projectElements.getWorkspaceSymbolLookup('component') as LookupObject<ProjectComponent>,
-					projectElements.getWorkspaceSymbolLookup('injectable') as LookupObject<ProjectInjectable>
+					projectElements.injectables
 				);
 				
-				// Display the created DOT diagram on the webview panel
-				DiagramPanel.activePanel?.showDiagramOnPanel(projectDiagram.dotDiagram);
-				
-				
-				projectDiagram.saveDiagramAsImage('png');
-
-
+				// Display the diagram on the webview panel
+				DiagramPanel.activePanel?.showDiagramOnPanel(diagramData);
 			} else {
 				vscode.window.showErrorMessage('tsconfig.json cannot be found');
 			}
