@@ -24,28 +24,78 @@
 function displayDiagram(dotDiagramString) {
     // Get container, options, and parse DOT into Vis.js network
     const container = document.getElementById('project-network');
+    // const options = {
+    //     'physics': {
+    //         'stabilization': false,
+    //         'barnesHut': {
+    //             'springConstant': 0,
+    //             'avoidOverlap': 0.1
+    //         },
+    //         'hierarchicalRepulsion': {
+    //             'nodeDistance': 140,
+    //         },
+    //     },
+    //     'layout': {
+    //         'randomSeed': 1,
+    //         'hierarchical': {
+    //             'sortMethod': 'directed',
+    //             'levelSeparation': 100,
+    //         },
+    //     },
+    // };
+
     const options = {
-        'physics': {
-            'stabilization': false,
-        },
-        'layout': {
-            'randomSeed': 1,
-            'hierarchical': {
-                'sortMethod': 'directed',
+        nodes: { borderWidth: 2 },
+        edges: { length: 300, smooth: false },
+        physics: { enabled: false },
+        layout: {
+            improvedLayout: true,
+            hierarchical: {
+                sortMethod: 'directed',
+                levelSeparation: 200,
+                nodeSpacing: 200,
+                treeSpacing: 200,
             },
         },
+        interaction: { hover: true },
     };
+
     const data = vis.parseDOTNetwork(dotDiagramString);
     console.log('options', data.options);
     
     // Create a new Vis network and assign to global variable
     const network = new vis.Network(container, data, options);
 
+    setTimeout(()=>{
+        network.setOptions({
+            layout: {
+                hierarchical: false
+            },
+            physics: {
+                stabilization: true
+            }
+        });
+    }, 1000);
+
+    // Post-stabilisation listener for network
+    // network.on('stabilized', function() {
+    //     console.log('stabilized');
+    //     network.setOptions({
+    //         physics: {
+    //             enabled: false,
+    //         },
+    //         layout: {
+    //             hierarchical: false,
+    //         },
+    //     });
+    // });
+
     // Post-drawing listener for network
-    network.on("afterDrawing", function(ctx) {
+    network.on('afterDrawing', function(ctx) {
+        // console.log('after drawing');
         const dataURL = ctx.canvas.toDataURL();
         document.getElementById('network-data-url').setAttribute('dataUrl', dataURL);
-    });    
+    });
 }
 
 /**
