@@ -9,6 +9,7 @@
   "categories": [
     "Other"
   ],
+  "extensionKind": ["workspace"],
   "activationEvents": [
     "onCommand:ng-project-diagram.diagram"
   ],
