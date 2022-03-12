@@ -117,9 +117,12 @@ export class DiagramPanel {
         const webview: vscode.Webview = this._panel.webview;
 
         // TODO: Minify all the external files the webview will use
-        // Create the URI to load the main script that will run in the webview
+        // Create the URIs to load the scripts that will run in the webview
         const scriptPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js');
         const scriptUri = (scriptPath).with({ 'scheme': 'vscode-resource' });
+
+        const visJsScriptPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'vis-network.min.js');
+        const visJsScriptUri = (visJsScriptPath).with({ 'scheme': 'vscode-resource' });
 
         // Create URI's for stylesheets
         const resetStylesPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css');
@@ -142,11 +145,7 @@ export class DiagramPanel {
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline'; img-src data:;">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>NG Project Diagram</title>
-                <script
-                    nonce="${nonce}"
-                    type="text/javascript"
-                    src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
-                ></script>
+                <script nonce="${nonce}" type="text/javascript" src="${visJsScriptUri}"></script>
                 <link href="${resetStylesUri}" rel="stylesheet">
                 <link href="${vscodeStylesUri}" rel="stylesheet">
                 <link href="${mainStylesUri}" rel="stylesheet">
