@@ -1,14 +1,4 @@
-html {
-    height: 95%;
-}
-body {
-    min-height: 100%;
-}
-
-#project-network {
-    height: 100vh;
-}
-
+/* --- Toolbar styles --- */
 .toolbar {
     margin-top: 1rem;
     padding: 0 0.25rem 0.25rem 0.25rem;
@@ -19,4 +9,39 @@ body {
     width: fit-content;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+}
+
+/* --- Vis JS Network styles --- */
+#project-network {
+    height: calc(100vh - 4.25rem);
+}
+
+/* Nav buttons: Remove existing background images */
+.vis-navigation .vis-button.vis-up,
+.vis-navigation .vis-button.vis-down,
+.vis-navigation .vis-button.vis-left,
+.vis-navigation .vis-button.vis-right, 
+.vis-navigation .vis-button.vis-zoomExtends, 
+.vis-navigation .vis-button.vis-zoomIn,
+.vis-navigation .vis-button.vis-zoomOut {
+    background-image: none !important;
+}
+
+/* Nav buttons: Change icon position and colour */
+.vis-navigation .vis-button .nav-icon {
+    margin: 5px;
+    fill: var(--vscode-button-background);
+}
+
+/* Nav buttons: Change icon hover colour */
+.vis-navigation .vis-button:hover {
+    box-shadow: none !important;
+}
+.vis-navigation .vis-button:hover .nav-icon {
+    fill: var(--vscode-button-hoverBackground);
+}
+
+/* Nav buttons: Change icon active colour */
+.vis-navigation .vis-button:active {
+    box-shadow: 0 0 1px 2px var(--vscode-focusBorder) !important;
 }

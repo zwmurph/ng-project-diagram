@@ -174,6 +174,7 @@ export class ProjectDiagram {
             interaction: {
                 hover: true,
                 navigationButtons: true,
+                keyboard: true,
             },
         };
 
