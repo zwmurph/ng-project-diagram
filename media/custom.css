@@ -11,6 +11,17 @@
     padding-right: 0.5rem;
 }
 
+.toolbar button#download-btn {
+    display: inline-flex;
+    align-items: flex-end;
+}
+.toolbar button#download-btn .download-icon {
+    margin-right: 0.25rem;
+    height: 18px;
+    width: 18px;
+    fill: var(--vscode-button-foreground);
+}
+
 /* --- Vis JS Network styles --- */
 #project-network {
     height: calc(100vh - 4.25rem);
