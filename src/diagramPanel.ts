@@ -19,7 +19,7 @@ export class DiagramPanel {
         this._workspaceRootPath = workspaceRootPath;
 
         // Set the webview's initial content
-        this.updatePanelContent();
+        this._panel.webview.html = this.getWebviewContent();
 
         // Event handler for when the panel is closed - happens on user action or programmatically
         this._panel.onDidDispose(() => {
@@ -36,11 +36,11 @@ export class DiagramPanel {
         }, null, this._disposables);
 
         // Event handler for changes to the content view state - happens when a webview's visibility changes, or when a webview is moved into a new editor column
-        this._panel.onDidChangeViewState(() => {
-            if (this._panel.visible) {
-                this.updatePanelContent();
-            }
-        }, null, this._disposables);
+        // this._panel.onDidChangeViewState(() => {
+        //     if (this._panel.visible) {
+                
+        //     }
+        // }, null, this._disposables);
 
         // Event handler for messages received from the webview
         this._panel.webview.onDidReceiveMessage((message) => {
@@ -92,21 +92,14 @@ export class DiagramPanel {
      * @param extensionUri Base URI for extension, used to limit which content can be loaded from the webview.
      * @returns Webview options.
      */
-    private static getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
+    private static getWebviewOptions(extensionUri: vscode.Uri): (vscode.WebviewPanelOptions & vscode.WebviewOptions) {
         return {
             // Enable JS in the webview
             enableScripts: true,
             // Restrict the webview to only loading content from this extension's 'media' directory.
             localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')],
+            retainContextWhenHidden: true,
         };
-    }
-
-    /**
-     * Updates the content of the panel.
-     */
-    private updatePanelContent(): void {
-        this._panel.webview.html = this.getWebviewContent();
-        // TODO: Re-grab DOT content and trigger to display again? (Fix for diagram not appearing sometimes?)
     }
 
     /**

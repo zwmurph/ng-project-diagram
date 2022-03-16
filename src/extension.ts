@@ -39,8 +39,6 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}
 	}));
-
-	// TODO: Register a serializer for the webview panel, so it reloads on editor close/open
 }
 
 // Event handler for extension deactivation
