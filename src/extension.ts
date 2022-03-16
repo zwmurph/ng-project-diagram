@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { join } from 'path';
 import { ProjectElements } from './projectElements';
+import { ProjectDiagram, ProjectDiagramMetadata } from './projectDiagram';
 import { DiagramPanel } from './diagramPanel';
 
 // Event handler for extension activation
@@ -11,27 +12,35 @@ export function activate(context: vscode.ExtensionContext) {
 	// Define the command and add to the extension context
 	context.subscriptions.push(vscode.commands.registerCommand('ng-project-diagram.diagram', () => {
 		// Get workspace root and check presence
-		const root = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
-		if (root) {
+		const wsRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+		if (wsRoot) {
 			// Find tsconfig file
-			const tsconfigPath = join(root, 'tsconfig.json');
+			const tsconfigPath = join(wsRoot, 'tsconfig.json');
 			if (fs.existsSync(tsconfigPath)) {
+				// Display an initial webview panel
+				// TODO: Add a loading spinner
+				DiagramPanel.display(context.extensionUri, wsRoot);
+
+				// Resolve all workspace symbols in the project
 				const projectElements = new ProjectElements(tsconfigPath);
 				projectElements.resolveAllWorkspaceSymbols();
 
-				console.log('modules', projectElements.modules);
-				console.log('components', projectElements.components);
-				console.log('injectables', projectElements.injectables);
-				console.log('modules lookup', projectElements.getWorkspaceSymbolLookup('module'));
-
-				DiagramPanel.display();
-
-
+				// Get project diagram data
+				const diagramData: ProjectDiagramMetadata = ProjectDiagram.getProjectDiagramData(
+					projectElements.modules,
+					projectElements.components,
+					projectElements.injectables
+				);
+				
+				// Display the diagram on the webview panel
+				DiagramPanel.activePanel?.showDiagramOnPanel(diagramData);
 			} else {
 				vscode.window.showErrorMessage('tsconfig.json cannot be found');
 			}
 		}
 	}));
+
+	// TODO: Register a serializer for the webview panel, so it reloads on editor close/open
 }
 
 // Event handler for extension deactivation
