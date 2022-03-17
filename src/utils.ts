@@ -6,9 +6,9 @@ import { join } from 'path';
  * @param array Input array - must have a property 'name'.
  * @returns LookupObject.
  */
-export function getLookupFromArray<T extends { name: string }>(array: T[]): LookupObject<T> | undefined {
+export function getLookupFromArray<T extends { name: string }>(array: T[]): LookupObject<T> {
     if (array == null || array.length === 0) {
-        return undefined;
+        return {} as LookupObject<T>;
     } else {
         return array.reduce((map, obj) => {
             map[obj.name] = obj;
