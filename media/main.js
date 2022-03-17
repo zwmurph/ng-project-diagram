@@ -8,7 +8,7 @@
         // Execute functions based on command sent in message
         const message = event.data;
         if (message.command === 'DISPLAY-DIAGRAM') {
-            displayDiagram(message.data, container);
+            displayDiagram(message.data, container, vscode);
         }
     });
 
@@ -22,8 +22,9 @@
  * Parses the network data into a Vis.js network and displays according to the options.
  * @param {*} networkMetadata Nodes and Edges to display along with Options for the Network.
  * @param {*} container HTMLElement to act as a container for the Network.
+ * @param {*} vscode VS Code API reference.
  */
-function displayDiagram(networkMetadata, container) {
+function displayDiagram(networkMetadata, container, vscode) {
     console.log('data', networkMetadata.data);
     console.log('options', networkMetadata.options);
 
@@ -57,6 +58,16 @@ function displayDiagram(networkMetadata, container) {
             // Disable hierarchical layout - is only needed for initial render. This allows the user to freely move
             //   nodes on the canvas
             network.setOptions({ layout: { hierarchical: false } });
+        });
+
+        // Event listener for double click
+        network.on('doubleClick', ({ nodes, edges, event, pointer }) => {
+            if (nodes != null && nodes.length > 0) {
+                vscode.postMessage({
+                    command: 'NODE-DOUBLE-CLICKED',
+                    data: nodes[0],
+                });
+            }
         });
     }, () => {});
 }

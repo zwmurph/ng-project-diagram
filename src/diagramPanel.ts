@@ -52,6 +52,8 @@ export class DiagramPanel {
                     console.error(error);
                     vscode.window.showErrorMessage('Download unsuccessful');
                 }
+            } else if (message.command === 'NODE-DOUBLE-CLICKED') {
+                this.openFileInEditor(message.data);
             }
         });
     }
@@ -100,6 +102,10 @@ export class DiagramPanel {
             localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')],
             retainContextWhenHidden: true,
         };
+    }
+
+    private openFileInEditor(nodeId: string): void {
+
     }
 
     /**
