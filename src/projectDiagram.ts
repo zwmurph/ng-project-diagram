@@ -201,10 +201,10 @@ export class ProjectDiagram {
         const allGroupOptions: Options = {
             groups: {
                 module: moduleNodeOptions,
-                externalModule: moduleNodeOptions, // TODO: Specify unique options for external modules
+                externalModule: moduleNodeOptions,
                 component: componentNodeOptions,
                 injectable: injectableNodeOptions,
-                externalInjectable: injectableNodeOptions, // TODO: Specify unique options for external injectables
+                externalInjectable: injectableNodeOptions,
             },
         };
 

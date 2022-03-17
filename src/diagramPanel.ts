@@ -109,7 +109,6 @@ export class DiagramPanel {
     private getWebviewContent(): string {
         const webview: vscode.Webview = this._panel.webview;
 
-        // TODO: Minify all the external files the webview will use
         // Create the URIs to load the scripts that will run in the webview
         const scriptPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js');
         const scriptUri = (scriptPath).with({ 'scheme': 'vscode-resource' });
