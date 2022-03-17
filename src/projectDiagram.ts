@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { ProjectComponent, ProjectInjectable, ProjectModule } from './projectElements';
 import { LookupObject } from './utils';
-import { Data, Edge, Node, NodeOptions, Options } from 'vis-network';
+import { Data, Edge, IdType, Node, NodeOptions, Options } from 'vis-network';
 
 /**
  * Class to hold logic for creating the project diagram from project elements.
@@ -127,9 +127,12 @@ export class ProjectDiagram {
             });
         });
 
+        // Adjust the node levels to provide a more top-down look
+        const levelAdjustedNodes = this.calculateNodeLevels(networkNodes, networkEdges);
+
         // Return network data for the project
         return {
-            data: { nodes: networkNodes, edges: networkEdges },
+            data: { nodes: levelAdjustedNodes, edges: networkEdges },
             options: this.getNetworkOptions(),
         } as ProjectDiagramMetadata;
     }
@@ -207,6 +210,66 @@ export class ProjectDiagram {
 
         // Return all options combined together
         return {...generalOptions, ...allGroupOptions};
+    }
+
+    /**
+     * Calculates levels for nodes based on maximum distance of edges.
+     * @param nodes Node array to calculate levels for.
+     * @param edges Corresponding edges between `nodes`.
+     * @returns Altered nodes with 'nodeOptions.level' set.
+     * 
+     * Source: [https://stackoverflow.com/a/59621284/].
+     */
+    private static calculateNodeLevels(nodes: Node[], edges: Edge[]): Node[] {
+        const reverseEdgesMap = new Map();
+        const nodesMap = new Map();
+        for (const edge of edges) {
+            const to = edge.to;
+            const from = edge.from;
+            if (reverseEdgesMap.has(to)) {
+                reverseEdgesMap.get(to).push(from);
+            } else {
+                reverseEdgesMap.set(to, [edge.from]);
+            }
+        }
+        for (const node of nodes) {
+            nodesMap.set(node.id, node);
+        }
+        for (const node of nodes) {
+            node.level = this.calculateMaxNodeLength(nodesMap, reverseEdgesMap, node.id);
+        }
+        return nodes;
+    }
+
+    /**
+     * Calculates the maximum node length of a given node.
+     * @param nodesMap Map of nodes to use for calculation.
+     * @param reverseEdgesMap Reversed map of edges to use for calculation.
+     * @param nodeId Id of node to calculate length for.
+     * @returns Longest depth the node has to any parent.
+     * 
+     * Source: [https://stackoverflow.com/a/59621284/].
+     */
+    private static calculateMaxNodeLength(nodesMap: Map<any, any>, reverseEdgesMap: Map<any, any>, nodeId: IdType | undefined) {
+        if (!(nodesMap instanceof Map)) {
+            throw new Error("nodesMap parameter should be an instance of Map");
+        }
+        if (!(reverseEdgesMap instanceof Map)) {
+            throw new Error("reverseEdgesMap parameter should be an instance of Map");
+        }
+        let parents = [];
+        let longestParentDepth = 0;
+        if (reverseEdgesMap.has(nodeId)) {
+            parents = reverseEdgesMap.get(nodeId);
+            for (const parentId of parents) {
+                let parentDepth = 1;
+                parentDepth += this.calculateMaxNodeLength(nodesMap, reverseEdgesMap, parentId);
+                if (parentDepth > longestParentDepth) {
+                    longestParentDepth = parentDepth;
+                }
+            }
+        }
+        return longestParentDepth;
     }
 }
 
