@@ -16,6 +16,11 @@
     document.getElementById('download-btn').addEventListener('click', () => {
         sendNetworkDataUrl(vscode, container);
     });
+
+    // Event listener for transparency toggle
+    // document.getElementById('canvas-background-toggle').addEventListener('change', function() {
+    //     handleTransparencyToggleChange(this.checked, container);
+    // });
 }());
 
 /**
@@ -47,9 +52,38 @@ function displayDiagram(networkMetadata, container) {
  * @param {*} networkContainer HTMLElement reference to the Network container.
  */
 function sendNetworkDataUrl(vscode, networkContainer) {
-    // Get the data URL from the canvas element
+    let canvasContext;
+
+    // Get the canvas element and checkbox state
     const canvasElement = networkContainer.getElementsByTagName('canvas')[0];
+    const transparencyToggleChecked = document.getElementById('canvas-background-toggle').checked;
+
+    // Check if the image should be saved with a transparent background or not
+    if (!transparencyToggleChecked) {
+        console.log('not checked - fill background');
+
+        // Get the canvas context from the element
+        canvasContext = canvasElement.getContext('2d');
+
+        // Save the context to restore from later
+        canvasContext.save();
+    
+        // Set the new compositions for the canvas to be behind existing
+        canvasContext.globalCompositeOperation = 'destination-over';
+    
+        // Set the background colour with a filled shaped
+        canvasContext.fillStyle = 'white';
+        canvasContext.fillRect(0, 0, canvasElement.width, canvasElement.height);
+    }
+
+    // Get the data URL from the canvas element
     const dataUrl = canvasElement.toDataURL();
+
+    if (!transparencyToggleChecked) {
+        console.log('restore');
+        // Restore the canvas
+        canvasContext.restore();
+    }
 
     // Send a message to the extension with this data
     vscode.postMessage({
@@ -62,7 +96,7 @@ function sendNetworkDataUrl(vscode, networkContainer) {
  * Function that inserts SVG elements within existing controls of Vis Network.
  * They are then styled with CSS according to current VS Code theme settings.
  * All SVGs source: [https://fonts.google.com/icons]
- * @param {*} networkContainer HTMLElement reference to the Network container. 
+ * @param {*} networkContainer HTMLElement reference to the Network container.
  */
 function createNavigationUi(networkContainer) {
     // Up arrow
@@ -93,3 +127,48 @@ function createNavigationUi(networkContainer) {
     networkContainer.querySelector('.vis-network .vis-navigation .vis-button.vis-zoomOut')
         .innerHTML += '<svg class="nav-icon nav-zoom" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg>';
 }
+
+/**
+ * Handles logic for when the canvas transparency toggle is clicked.
+ * @param {*} checked Current state of the checkbox - checked or not.
+ * @param {*} networkContainer HTMLElement reference to the Network container.
+ */
+function handleTransparencyToggleChange(checked, networkContainer) {
+    if (checked) {
+        console.log('make transparent');
+    } else {
+        console.log('fill with colour');
+
+        // Get the canvas element
+        const canvasElement = networkContainer.getElementsByTagName('canvas')[0];
+        fillCanvasBackgroundWithColor(canvasElement, 'aquamarine');
+    }
+}
+
+function fillCanvasBackgroundWithColor(canvas, color) {
+    // Get the 2D drawing context from the provided canvas.
+    const context = canvas.getContext('2d');
+  
+    // We're going to modify the context state, so it's
+    // good practice to save the current state first.
+    context.save();
+  
+    // Normally when you draw on a canvas, the new drawing
+    // covers up any previous drawing it overlaps. This is
+    // because the default `globalCompositeOperation` is
+    // 'source-over'. By changing this to 'destination-over',
+    // our new drawing goes behind the existing drawing. This
+    // is desirable so we can fill the background, while leaving
+    // the chart and any other existing drawing intact.
+    // Learn more about `globalCompositeOperation` here:
+    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalCompositeOperation
+    context.globalCompositeOperation = 'destination-over';
+  
+    // Fill in the background. We do this by drawing a rectangle
+    // filling the entire canvas, using the provided color.
+    context.fillStyle = color;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+  
+    // Restore the original context state from `context.save()`
+    // context.restore();
+  }

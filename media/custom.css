@@ -1,5 +1,8 @@
 /* --- Toolbar styles --- */
 .toolbar {
+    display: inline-flex;
+    align-items: center;
+    width: 100%;
     margin-top: 1rem;
     padding: 0 0.25rem 0.25rem 0.25rem;
     border-bottom: 1px solid var(--vscode-focusBorder);
@@ -20,6 +23,11 @@
     height: 18px;
     width: 18px;
     fill: var(--vscode-button-foreground);
+}
+
+.toolbar .transparency-toggle {
+    display: inline-flex;
+    margin-left: 0.5rem;
 }
 
 /* --- Vis JS Network styles --- */
