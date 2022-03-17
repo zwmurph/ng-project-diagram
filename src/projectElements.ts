@@ -7,6 +7,7 @@ import { getLookupFromArray, LookupObject } from "./utils";
 export class ProjectElements {
     private workspaceSymbols: WorkspaceSymbols;
 
+    // Elements
     private _projectModules: ProjectModule[];
     public get modules(): ProjectModule[] {
         return this._projectModules;
@@ -22,6 +23,22 @@ export class ProjectElements {
         return this._projectInjectables;
     }
 
+    // Element lookups
+    private _projectModulesLookup: LookupObject<ProjectModule>;
+    public get modulesLookup(): LookupObject<ProjectModule> {
+        return this._projectModulesLookup;
+    }
+
+    private _projectComponentsLookup: LookupObject<ProjectComponent>;
+    public get componentsLookup(): LookupObject<ProjectComponent> {
+        return this._projectComponentsLookup;
+    }
+
+    private _projectInjectablesLookup: LookupObject<ProjectInjectable>;
+    public get injectablesLookup(): LookupObject<ProjectInjectable> {
+        return this._projectInjectablesLookup;
+    }
+
     constructor(private readonly tsconfigPath: string) { }
 
     /**
@@ -31,30 +48,19 @@ export class ProjectElements {
     public resolveAllWorkspaceSymbols(): void {
         this.workspaceSymbols = new WorkspaceSymbols(this.tsconfigPath);
 
+        // Elements
         this._projectModules = this.resolveProjectModules();
         this._projectComponents = this.resolveProjectComponents();
         this._projectInjectables = this.resolveProjectInjectables();
 
+        // Element lookups
+        this._projectModulesLookup = getLookupFromArray(this._projectModules);
+        this._projectComponentsLookup = getLookupFromArray(this._projectComponents);
+        this._projectInjectablesLookup = getLookupFromArray(this._projectInjectables);
+
         // TODO: Directives and pipes at a later time, if needed
         // this.workspaceSymbols.getAllDirectives();
         // this.workspaceSymbols.getAllPipes();
-    }
-
-    /**
-     * Gets a lookup for a given symbol type.
-     * @param symbolType 'module' | 'component' | 'injectable'.
-     * @returns Lookup object or undefined if invalid `symbolType` is provided.
-     */
-    public getWorkspaceSymbolLookup(symbolType: 'module' | 'component' | 'injectable'): LookupObject<ProjectModule | ProjectComponent | ProjectInjectable> | undefined {
-        if (symbolType === 'module') {
-            return getLookupFromArray(this._projectModules);
-        } else if (symbolType === 'component') {
-            return getLookupFromArray(this._projectComponents);
-        } else if (symbolType === 'injectable') {
-            return getLookupFromArray(this._projectInjectables);
-        } else {
-            return undefined;
-        }
     }
 
     /**
