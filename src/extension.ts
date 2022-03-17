@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { join } from 'path';
-import { ProjectElements } from './projectElements';
-import { ProjectDiagram, ProjectDiagramMetadata } from './projectDiagram';
+import { ProjectDiagramMetadata, ProjectElements } from './projectElements';
 import { DiagramPanel } from './diagramPanel';
 
 // Event handler for extension activation
@@ -25,11 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
 				projectElements.resolveAllWorkspaceSymbols();
 
 				// Get project diagram data
-				const diagramData: ProjectDiagramMetadata = ProjectDiagram.getProjectDiagramData(
-					projectElements.modules,
-					projectElements.components,
-					projectElements.injectables
-				);
+				const diagramData: ProjectDiagramMetadata = projectElements.getProjectDiagramData();
 				
 				// Display the diagram on the webview panel
 				DiagramPanel.activePanel?.showDiagramOnPanel(diagramData);

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ProjectDiagramMetadata } from './projectDiagram';
+import { ProjectDiagramMetadata } from './projectElements';
 import { getToken, saveDataUrlAsImage } from './utils';
 
 /**
