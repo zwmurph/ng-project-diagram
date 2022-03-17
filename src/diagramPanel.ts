@@ -127,6 +127,10 @@ export class DiagramPanel {
         const mainStylesPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'custom.css');
         const mainStylesUri = webview.asWebviewUri(mainStylesPath);
 
+        const fontAwesomeStylePath = vscode.Uri.parse('https://use.fontawesome.com/releases/v5.15.4/css/all.css');
+        const fontAwesomeStylesUri = webview.asWebviewUri(fontAwesomeStylePath);
+        const fontAwesomeDomain = 'https://use.fontawesome.com/';
+
         // Use a token to only allow specific scripts to run - set in Content-Security-Policy.
         const nonce = getToken();
 
@@ -135,13 +139,20 @@ export class DiagramPanel {
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} data:;">
+                <meta http-equiv="Content-Security-Policy" content="
+                    default-src 'none';
+                    script-src 'nonce-${nonce}';
+                    style-src ${webview.cspSource} 'unsafe-inline' ${fontAwesomeDomain};
+                    img-src ${webview.cspSource} data:;
+                    font-src ${fontAwesomeDomain};
+                ">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>NG Project Diagram</title>
                 <script nonce="${nonce}" type="text/javascript" src="${visJsScriptUri}"></script>
                 <link href="${resetStylesUri}" rel="stylesheet">
                 <link href="${vscodeStylesUri}" rel="stylesheet">
                 <link href="${mainStylesUri}" rel="stylesheet">
+                <link href="${fontAwesomeStylesUri}" rel="stylesheet">
             </head>
             <body>
                 <div class="toolbar">

@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 import { ProjectComponent, ProjectInjectable, ProjectModule } from './projectElements';
 import { LookupObject } from './utils';
 import { Data, Edge, Node, NodeOptions, Options } from 'vis-network';
@@ -138,29 +139,35 @@ export class ProjectDiagram {
      * @returns Options object.
      */
     private static getNetworkOptions(): Options {
-        // General options for the network as a whole
-        // const generalOptions: Options = {
-        //     'physics': {
-        //         'stabilization': false,
-        //         'barnesHut': {
-        //             'springConstant': 0,
-        //             'avoidOverlap': 0.1
-        //         },
-        //         'hierarchicalRepulsion': {
-        //             'nodeDistance': 140,
-        //         },
-        //     },
-        //     'layout': {
-        //         'randomSeed': 1,
-        //         'hierarchical': {
-        //             'sortMethod': 'directed',
-        //             'levelSeparation': 100,
-        //         },
-        //     },
-        // };
+        // Get active editor theme - 1: light, 2: dark, 3: high contrast
+        const editorThemeId = vscode.window.activeColorTheme.kind;
+        // Set a map for contrasting text colours to theme kinds
+        const editorThemeIdFontColourMap = {
+            1: '#000000',
+            2: '#FFFFFF',
+            3: '#FFFFFF',
+        };
+
+        // Set general network options
         const generalOptions: Options = {
-            nodes: { borderWidth: 2 },
-            edges: { length: 300, smooth: false, arrows: 'to' },
+            nodes: { 
+                borderWidth: 2,
+                font: {
+                    color: editorThemeIdFontColourMap[editorThemeId],
+                },
+                shape: 'icon',
+                icon: {
+                    face: "'Font Awesome 5 Free'",
+                    size: 50,
+                    weight: "900",
+                },
+            },
+            edges: {
+                length: 300,
+                smooth: false,
+                arrows: 'to',
+                arrowStrikethrough: false,
+            },
             physics: { enabled: false },
             layout: {
                 improvedLayout: true,
@@ -180,16 +187,13 @@ export class ProjectDiagram {
 
         // Options for node groups, individual node options will override these
         const moduleNodeOptions: NodeOptions = {
-            shape: 'box',
-            shapeProperties: {
-                borderRadius: 0,
-            },
+            icon: { code: "\uf07b", color: "#0096FF" },
         };
         const componentNodeOptions: NodeOptions = {
-            shape: 'box',
+            icon: { code: "\uf12e", color: "#40B5AD" },
         };
         const injectableNodeOptions: NodeOptions = {
-            shape: 'ellipse',
+            icon: { code: "\uf362", color: "#5D3FD3" },
         };
         const allGroupOptions: Options = {
             groups: {

@@ -27,18 +27,38 @@ function displayDiagram(networkMetadata, container) {
     console.log('data', networkMetadata.data);
     console.log('options', networkMetadata.options);
 
-    // Create a new Vis.js network
-    const network = new vis.Network(container, networkMetadata.data, networkMetadata.options);
-   
-    // Update the UI with new icons
-    createNavigationUi(container);
+    // Wait for fonts to load before creating the network
+    new Promise((resolve) => {
+        if (document.fonts) {
+            // Preferred method for loading fonts
+            document.fonts
+                .load('normal normal 900 24px/1 "Font Awesome 5 Free"')
+                .catch(console.error.bind(console, 'Failed to load Font Awesome 5.'))
+                .then(function() {
+                    // Create a network
+                    resolve(new vis.Network(container, networkMetadata.data, networkMetadata.options));
+                })
+                .catch(console.error.bind(console, 'Failed to render the network with Font Awesome 5.'));
+        } else {
+            // Fallback for loading fonts (wait and hope)
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    // Create a network
+                    resolve(new vis.Network(container, networkMetadata.data, networkMetadata.options));
+                }, 500);
+            });
+        }
+    }).then((network) => {
+        // Update the UI with new icons
+        createNavigationUi(container);
 
-    // Only trigger this listener once, after the first drawing of the canvas
-    network.once('afterDrawing', () => {
-        // Disable hierarchical layout - is only needed for initial render. This allows the user to freely move
-        //   nodes on the canvas
-        network.setOptions({ layout: { hierarchical: false } });
-    });
+        // Only trigger this listener once, after the first drawing of the canvas
+        network.once('afterDrawing', () => {
+            // Disable hierarchical layout - is only needed for initial render. This allows the user to freely move
+            //   nodes on the canvas
+            network.setOptions({ layout: { hierarchical: false } });
+        });
+    }, () => {});
 }
 
 /**
