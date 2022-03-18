@@ -6,8 +6,6 @@ import { DiagramPanel } from './diagramPanel';
 
 // Event handler for extension activation
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Extension is active');
-
 	// Define the command and add to the extension context
 	context.subscriptions.push(vscode.commands.registerCommand('ng-project-diagram.diagram', () => {
 		// Get workspace root and check presence
