@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ProjectDiagramMetadata } from './projectElements';
+import { ProjectDiagramMetadata, ProjectElements } from './projectElements';
 import { getToken, saveDataUrlAsImage } from './utils';
 
 /**
@@ -104,8 +104,59 @@ export class DiagramPanel {
         };
     }
 
+    /**
+     * Opens the file corresponding to a node in the editor.
+     * @param nodeId Node to get file for.
+     */
     private openFileInEditor(nodeId: string): void {
+        // Get the group the node belongs to to know which lookup to use
+        const projectElements = ProjectElements.getInstance();
+        const nodeGroup = projectElements.networkNodesLookup[nodeId]?.group;
+        
+        // Get the resulting file path
+        let filePath: string | undefined = undefined;
+        if (nodeGroup != null) {
+            if (nodeGroup === 'module' || nodeGroup === 'externalModule') {
+                const module = projectElements.modulesLookup[nodeId];
+                if (module != null) {
+                    filePath = module.path;
+                }
+            } else if (nodeGroup === 'component') {
+                const component = projectElements.componentsLookup[nodeId];
+                if (component != null) {
+                    filePath = component.path;
+                }
+            } else if (nodeGroup === 'injectable' || nodeGroup === 'externalInjectable') {
+                const injectable = projectElements.injectablesLookup[nodeId];
+                if (injectable != null) {
+                    filePath = injectable.path;
+                }
+            }
+        }
 
+        // Open the file in the editor
+        if (filePath != null) {
+            vscode.workspace.openTextDocument(vscode.Uri.file(filePath)).then((doc: vscode.TextDocument) => {
+                // Determine the editor column to show file in
+                const panelViewColumn = this._panel.viewColumn!;
+                let fileColumn: number = 1;
+                if (panelViewColumn === 1) {
+                    // Open file in editor right of network
+                    fileColumn = 2;
+                } else if (panelViewColumn > 1) {
+                    // Open file in editor left of network
+                    fileColumn = panelViewColumn - 1;
+                }
+
+                // Display document
+                vscode.window.showTextDocument(doc, fileColumn, false);
+            }, (error) => {
+                console.error(error);
+                vscode.window.showWarningMessage('Unable to load file.');
+            });
+        } else {
+            vscode.window.showWarningMessage('Unable to find file.');
+        }
     }
 
     /**

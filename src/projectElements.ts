@@ -13,12 +13,12 @@ export class ProjectElements {
     private workspaceSymbols: WorkspaceSymbols;
     private tsconfigPath: string;
 
-    // Elements
+    // Project symbols
     private projectModules: ProjectModule[];
     private projectComponents: ProjectComponent[];
     private projectInjectables: ProjectInjectable[];
 
-    // Element lookups
+    // Project symbol lookups
     private _projectModulesLookup: LookupObject<ProjectModule>;
     public get modulesLookup(): LookupObject<ProjectModule> {
         return this._projectModulesLookup;
@@ -34,10 +34,16 @@ export class ProjectElements {
         return this._projectInjectablesLookup;
     }
 
+    // Network node lookup
+    private _networkNodesLookup: LookupObject<Node> = {};
+    public get networkNodesLookup(): LookupObject<Node> {
+        return this._networkNodesLookup;
+    }
+
     private constructor() { }
 
     /**
-     * Singleton accessor for class.
+     * Singleton accessor for class. Creates a new instance if not already existing.
      * @returns Instance of `ProjectElements` class.
      */
     public static getInstance(): ProjectElements {
@@ -57,7 +63,7 @@ export class ProjectElements {
 
     /**
      * Resolves all symbols within the project.
-     * MUST be called before accessing symbols, their lookups, or generating network diagram data.
+     * MUST be called before trying to access properties or methods that interact with project symbols or create network data.
      */
     public resolveAllWorkspaceSymbols(): void {
         this.workspaceSymbols = new WorkspaceSymbols(this.tsconfigPath);
@@ -87,34 +93,34 @@ export class ProjectElements {
         const networkEdges: Edge[] = [];
 
         // Create lookup for created nodes
-        const networkNodesLookup: LookupObject<Node> = {};
+        this._networkNodesLookup = {};
         
         // Create nodes
         this.projectModules.forEach((module) => {
             const moduleNode: Node = { id: module.name, label: module.name, group: 'module' };
             networkNodes.push(moduleNode);
-            networkNodesLookup[module.name] = moduleNode;
+            this._networkNodesLookup[module.name] = moduleNode;
         });
         this.projectComponents.forEach((component) => {
             const componentNode: Node = { id: component.name, label: component.name, group: 'component' };
             networkNodes.push(componentNode);
-            networkNodesLookup[component.name] = componentNode;
+            this._networkNodesLookup[component.name] = componentNode;
         });
         this.projectInjectables.forEach((injectable) => {
             const injectableNode: Node = { id: injectable.name, label: injectable.name, group: 'injectable' };
             networkNodes.push(injectableNode);
-            networkNodesLookup[injectable.name] = injectableNode;
+            this._networkNodesLookup[injectable.name] = injectableNode;
         });
 
         // Create edges
         this.projectModules.forEach((module: ProjectModule) => {
             // Get the node representing the current iterating module
-            const fromNode = networkNodesLookup[module.name];
+            const fromNode = this._networkNodesLookup[module.name];
 
             // Connect each module to other modules
             module.imports.forEach((moduleImport: string) => {
                 // Check if the imported module exists in the network node lookup
-                const toNode = networkNodesLookup[moduleImport];
+                const toNode = this._networkNodesLookup[moduleImport];
                 if (toNode != null) {
                     networkEdges.push({
                         id: `${fromNode.id}->${toNode.id}`,
@@ -126,7 +132,7 @@ export class ProjectElements {
                     //   - not part of 'modules' - so create a node for it
                     const externalModuleNode: Node = { id: moduleImport, label: moduleImport, group: 'externalModule' };
                     networkNodes.push(externalModuleNode);
-                    networkNodesLookup[moduleImport] = externalModuleNode;
+                    this._networkNodesLookup[moduleImport] = externalModuleNode;
 
                     // And create and edge to it
                     networkEdges.push({
@@ -140,7 +146,7 @@ export class ProjectElements {
             // Connect each module to its components
             module.declarations.forEach((moduleDeclaration: string) => {
                 // Make sure the declaration exists in the network node lookup
-                const toNode = networkNodesLookup[moduleDeclaration];
+                const toNode = this._networkNodesLookup[moduleDeclaration];
                 if (toNode != null) {
                     // Create an edge
                     networkEdges.push({
@@ -155,11 +161,11 @@ export class ProjectElements {
         // Connect each component to dependencies it injects
         this.projectComponents.forEach((component: ProjectComponent) => {
             // Get the node representing the current iterating component
-            const fromNode = networkNodesLookup[component.name];
+            const fromNode = this._networkNodesLookup[component.name];
 
             component.injectedDependencies.forEach((componentInjectable: string) => {
                 // Check if the injected dependency exists in the network node lookup
-                const toNode = networkNodesLookup[componentInjectable];
+                const toNode = this._networkNodesLookup[componentInjectable];
                 if (toNode != null) {
                     networkEdges.push({
                         id: `${fromNode.id}->${toNode.id}`,
@@ -175,7 +181,7 @@ export class ProjectElements {
                         group: 'externalInjectable'
                     };
                     networkNodes.push(externalInjectableNode);
-                    networkNodesLookup[componentInjectable] = externalInjectableNode;
+                    this._networkNodesLookup[componentInjectable] = externalInjectableNode;
 
                     // And create and edge to it
                     networkEdges.push({
@@ -350,6 +356,7 @@ export class ProjectElements {
         }
         for (const node of nodes) {
             node.level = this.calculateMaxNodeLength(nodesMap, reverseEdgesMap, node.id);
+            this._networkNodesLookup[node.id!] = node;  
         }
         return nodes;
     }
@@ -407,7 +414,7 @@ export interface ProjectInjectable {
     providedIn: string | null;
 }
 
-export interface ProjectDiagramMetadata {
+export type ProjectDiagramMetadata = {
     data: Data;
     options: Options;
 };
