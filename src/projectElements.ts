@@ -8,7 +8,10 @@ import { Data, Edge, IdType, Node, NodeOptions, Options } from 'vis-network';
  * Is responsible for creating the network diagram data from project elements.
  */
 export class ProjectElements {
+    private static instance: ProjectElements | undefined = undefined;
+
     private workspaceSymbols: WorkspaceSymbols;
+    private tsconfigPath: string;
 
     // Elements
     private projectModules: ProjectModule[];
@@ -31,7 +34,26 @@ export class ProjectElements {
         return this._projectInjectablesLookup;
     }
 
-    constructor(private readonly tsconfigPath: string) { }
+    private constructor() { }
+
+    /**
+     * Singleton accessor for class.
+     * @returns Instance of `ProjectElements` class.
+     */
+    public static getInstance(): ProjectElements {
+        if (ProjectElements.instance == undefined) {
+            ProjectElements.instance = new ProjectElements();
+        }
+        return ProjectElements.instance;
+    }
+
+    /**
+     * Sets path to tsconfig file.
+     * @param tsconfigPath Path to TypeScript config file.
+     */
+    public setTsconfigPath(tsconfigPath: string): void {
+        this.tsconfigPath = tsconfigPath;
+    }
 
     /**
      * Resolves all symbols within the project.

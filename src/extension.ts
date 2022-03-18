@@ -18,9 +18,12 @@ export function activate(context: vscode.ExtensionContext) {
 			if (fs.existsSync(tsconfigPath)) {
 				// Display an initial webview panel
 				DiagramPanel.display(context.extensionUri, wsRoot);
+				
+				// Create a new instance of the project elements class
+				const projectElements = ProjectElements.getInstance();
+				projectElements.setTsconfigPath(tsconfigPath);
 
 				// Resolve all workspace symbols in the project
-				const projectElements = new ProjectElements(tsconfigPath);
 				projectElements.resolveAllWorkspaceSymbols();
 
 				// Get project diagram data
