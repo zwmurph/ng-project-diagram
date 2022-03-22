@@ -126,7 +126,7 @@ export class DiagramPanel {
                 if (component != null) {
                     filePath = component.path;
                 }
-            } else if (nodeGroup === 'injectable' || nodeGroup === 'externalInjectable') {
+            } else if (nodeGroup === 'injectable') {
                 const injectable = projectElements.injectablesLookup[nodeId];
                 if (injectable != null) {
                     filePath = injectable.path;

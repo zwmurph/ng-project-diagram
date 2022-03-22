@@ -423,7 +423,6 @@ export class ProjectElements {
                 externalModule: moduleNodeOptions,
                 component: componentNodeOptions,
                 injectable: injectableNodeOptions,
-                externalInjectable: injectableNodeOptions,
             },
         };
 
