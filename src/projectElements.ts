@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { WorkspaceSymbols } from "ngast";
-import { getLookupFromArray, LookupObject } from "./utils";
+import { WorkspaceSymbols } from 'ngast';
+import { getLookupFromArray, LookupObject } from './utils';
 import { Data, Edge, IdType, Node, NodeOptions, Options } from 'vis-network';
 
 /**
@@ -69,9 +69,9 @@ export class ProjectElements {
         this.workspaceSymbols = new WorkspaceSymbols(this.tsconfigPath);
 
         // Elements
-        this.projectModules = this.resolveProjectModules();
-        this.projectComponents = this.resolveProjectComponents();
-        this.projectInjectables = this.resolveProjectInjectables();
+        this.resolveProjectModules();
+        this.resolveProjectComponents();
+        this.resolveProjectInjectables();
 
         // Element lookups
         this._projectModulesLookup = getLookupFromArray(this.projectModules);
@@ -97,7 +97,8 @@ export class ProjectElements {
         
         // Create nodes
         this.projectModules.forEach((module) => {
-            const moduleNode: Node = { id: module.name, label: module.name, group: 'module' };
+            const moduleGroup: string = module.internal === true ? 'module' : 'externalModule';
+            const moduleNode: Node = { id: module.name, label: module.name, group: moduleGroup };
             networkNodes.push(moduleNode);
             this._networkNodesLookup[module.name] = moduleNode;
         });
@@ -116,45 +117,40 @@ export class ProjectElements {
         this.projectModules.forEach((module: ProjectModule) => {
             // Get the node representing the current iterating module
             const fromNode = this._networkNodesLookup[module.name];
+            if (fromNode == null) {
+                return;
+            }
 
             // Connect each module to other modules
             module.imports.forEach((moduleImport: string) => {
-                // Check if the imported module exists in the network node lookup
+                // Find the imported module in the network node lookup
                 const toNode = this._networkNodesLookup[moduleImport];
-                if (toNode != null) {
-                    networkEdges.push({
-                        id: `${fromNode.id}->${toNode.id}`,
-                        from: fromNode.id,
-                        to: toNode.id,
-                    } as Edge);
-                } else {
-                    // If the node to connect to doesn't exist yet, this means it is an external module
-                    //   - not part of 'modules' - so create a node for it
-                    const externalModuleNode: Node = { id: moduleImport, label: moduleImport, group: 'externalModule' };
-                    networkNodes.push(externalModuleNode);
-                    this._networkNodesLookup[moduleImport] = externalModuleNode;
-
-                    // And create and edge to it
-                    networkEdges.push({
-                        id: `${fromNode.id}->${externalModuleNode.id}`,
-                        from: fromNode.id,
-                        to: externalModuleNode.id,
-                    } as Edge);
+                if (toNode == null) {
+                    return;
                 }
+
+                // Create an edge
+                networkEdges.push({
+                    id: `${fromNode.id}->${toNode.id}`,
+                    from: fromNode.id,
+                    to: toNode.id,
+                } as Edge);
             });
 
             // Connect each module to its components
             module.declarations.forEach((moduleDeclaration: string) => {
-                // Make sure the declaration exists in the network node lookup
+                // Find the declaration in the network node lookup
                 const toNode = this._networkNodesLookup[moduleDeclaration];
-                if (toNode != null) {
-                    // Create an edge
-                    networkEdges.push({
-                        id: `${fromNode.id}->${toNode.id}`,
-                        from: fromNode.id,
-                        to: toNode.id,
-                    } as Edge);
+                if (toNode == null) {
+                    return;
                 }
+
+                // Create an edge
+                networkEdges.push({
+                    id: `${fromNode.id}->${toNode.id}`,
+                    from: fromNode.id,
+                    to: toNode.id,
+                } as Edge);
             });
         });
 
@@ -162,34 +158,23 @@ export class ProjectElements {
         this.projectComponents.forEach((component: ProjectComponent) => {
             // Get the node representing the current iterating component
             const fromNode = this._networkNodesLookup[component.name];
+            if (fromNode == null) {
+                return;
+            }
 
             component.injectedDependencies.forEach((componentInjectable: string) => {
-                // Check if the injected dependency exists in the network node lookup
+                // Check if the injected dependency exists in the network node lookup (only create edges to internal)
                 const toNode = this._networkNodesLookup[componentInjectable];
-                if (toNode != null) {
-                    networkEdges.push({
-                        id: `${fromNode.id}->${toNode.id}`,
-                        from: fromNode.id,
-                        to: toNode.id,
-                    } as Edge);
-                } else {
-                    // If the node to connect to doesn't exist yet, this means it is an external injected dependency
-                    //   - not part of 'injectables' - so create a node for it
-                    const externalInjectableNode: Node = {
-                        id: componentInjectable,
-                        label: componentInjectable,
-                        group: 'externalInjectable'
-                    };
-                    networkNodes.push(externalInjectableNode);
-                    this._networkNodesLookup[componentInjectable] = externalInjectableNode;
-
-                    // And create and edge to it
-                    networkEdges.push({
-                        id: `${fromNode.id}->${externalInjectableNode.id}`,
-                        from: fromNode.id,
-                        to: externalInjectableNode.id,
-                    } as Edge);
+                if (toNode == null) {
+                    return;
                 }
+
+                // Create edge
+                networkEdges.push({
+                    id: `${fromNode.id}->${toNode.id}`,
+                    from: fromNode.id,
+                    to: toNode.id,
+                } as Edge);
             });
         });
 
@@ -205,55 +190,170 @@ export class ProjectElements {
 
     /**
      * Gets project modules.
-     * @returns Array of modules.
      */
-    private resolveProjectModules(): ProjectModule[] {
-        return this.workspaceSymbols.getAllModules().map((module) => ({
-            name: module.name,
-            path: module.path,
-            imports: module.getImports().map((imp) => imp.name),
-            declarations: module.getDeclarations().map((declaration) => declaration.name),
-            providers: null // TODO: Linked to providedIn-TODO for project injectables
-        } as ProjectModule));
+    private resolveProjectModules(): void {
+        const modules: ProjectModule[] = [];
+        const addedModules: LookupObject<boolean> = {};
+        const importedModules: LookupObject<any> = {};
+
+        // Handle main modules (internal)
+        this.workspaceSymbols.getAllModules().forEach((module) => {
+            // Create a basic object
+            const moduleObj: ProjectModule = {
+                name: module.name,
+                path: module.path,
+                imports: [],
+                declarations: [],
+                providers: [],
+                internal: true,
+            };
+
+            // Get module imports
+            const foundImports = module.getImports();
+            if (foundImports != null && foundImports.length > 0) {
+                foundImports.forEach((imp) => {
+                    // Add name in module object property
+                    moduleObj.imports.push(imp.name);
+
+                    // Add to lookup to process below
+                    if (importedModules[imp.name] == null) {
+                        importedModules[imp.name] = imp;
+                    }
+                });
+            }
+
+            // Get module declarations
+            const foundDeclarations = module.getDeclarations();
+            if (foundDeclarations != null && foundDeclarations.length > 0) {
+                moduleObj.declarations.push(...foundDeclarations.map((declaration) => declaration.name));
+            }
+
+            // Check the symbol has been analysed before accessing the analysis
+            if (module.isAnalysed === false) {
+                module.analyse();
+            }
+            
+            // Get the providers data, if present
+            const providersCopy: any = module.analysis?.providers;
+            if (providersCopy != null) {
+                if (providersCopy.elements != null && providersCopy.elements.length > 0) {
+                    providersCopy.elements.forEach((elem: any) => {
+                        if (elem.escapedText != null && elem.escapedText != '' && !moduleObj.providers.includes(elem.escapedText)) {
+                            moduleObj.providers.push(elem.escapedText);
+                        }
+                    });
+                }
+            }
+
+            // Add internal modules to the list
+            modules.push(moduleObj);
+            addedModules[module.name] = true;
+        });
+
+        // Handle imported modules (external)
+        for (const [key, value] of Object.entries(importedModules)) {
+            if (!(addedModules[key] === true)) {
+                modules.push({
+                    name: key,
+                    path: value.path,
+                    internal: false,
+                    declarations: [],
+                    imports: [],
+                    providers: [],
+                } as ProjectModule);
+                addedModules[key] = true;
+            }
+        }
+        this.projectModules = modules;
     }
 
     /**
      * Gets project components.
-     * @returns Array of components.
      */
-    private resolveProjectComponents(): ProjectComponent[] {
-        return this.workspaceSymbols.getAllComponents().map((component) => {
-            // Map details from all found components
+    private resolveProjectComponents(): void {
+        const components: ProjectComponent[] = [];
+        this.workspaceSymbols.getAllComponents().forEach((component) => {
+            // Create a basic object
             const componentObj: ProjectComponent = {
                 name: component.name,
                 path: component.path,
-                selector: component.metadata.selector === null ? '' : component.metadata.selector,
+                selector: undefined,
+                changeDetection: undefined,
                 injectedDependencies: [],
+                inputs: [],
+                outputs: [],
             };
 
-            // Find names of injected dependencies in component and add to details list
-            if (component.deps != null && component.deps !== "invalid" && component.deps.length > 0) {
-                component.deps.forEach((dependency) => {
-                    const dependencyObj = JSON.parse(JSON.stringify(dependency));
-                    const dependencyName: string = dependencyObj?.token?.value?.name;
-                    componentObj.injectedDependencies.push(dependencyName);
+            // Update selector and change detection properties
+            if (component.metadata != null) {
+                componentObj.selector = component.metadata.selector == null ? undefined : component.metadata.selector;
+                componentObj.changeDetection = component.metadata.changeDetection === undefined || component.metadata.changeDetection === 1 ? 'Default' : 'OnPush';
+            }
+
+            // Find injected dependencies of component and add their names to the list
+            const componentCopy: any = component;
+            if (componentCopy.deps != null && componentCopy.deps.length > 0) {
+                componentCopy.deps.forEach((dep: any) => {
+                    const dependency = dep?.token?.value;
+                    if (dependency != null && dependency.name != '' && !componentObj.injectedDependencies.includes(dependency.name)) {
+                        componentObj.injectedDependencies.push(dependency.name);
+                    }
                 });
             }
-            return componentObj;
+
+            // Find inputs and outputs of the component
+            if (component.metadata?.inputs != null) {
+                for (const [key, value] of Object.entries(component.metadata?.inputs)) {
+                    if (!componentObj.inputs.includes(key)) {
+                        componentObj.inputs.push(key);
+                    }
+                }
+            }
+            if (component.metadata?.outputs != null) {
+                for (const [key, value] of Object.entries(component.metadata?.outputs)) {
+                    if (!componentObj.outputs.includes(key)) {
+                        componentObj.outputs.push(key);
+                    }
+                }
+            }
+
+            // Add the component to the list
+            components.push(componentObj);
         });
+        this.projectComponents = components;
     }
 
     /**
      * Gets project injectables (services).
-     * @returns Array of injectables.
      */
-    private resolveProjectInjectables(): ProjectInjectable[] {
+    private resolveProjectInjectables() {
+        const injectables: ProjectInjectable[] = [];
         // Map details from all found injectables
-        return this.workspaceSymbols.getAllInjectable().map((injectable) => ({
-            name: injectable.name,
-            path: injectable.path,
-            providedIn: null // TODO: injectable.metadata.providedIn.node.text
-        } as ProjectInjectable));
+        this.workspaceSymbols.getAllInjectable().forEach((injectable) => {
+            // Create a basic object
+            const injectableObj: ProjectInjectable = {
+                name: injectable.name,
+                path: injectable.path,
+                providedIn: undefined,
+            };
+
+            // Check the symbol has been analysed before accessing the analysis
+            if (injectable.isAnalysed === false) {
+                injectable.analyse();
+            }
+            
+            // Get the providedIn data, if present
+            const providedInCopy: any = injectable.analysis?.meta.providedIn;
+            if (providedInCopy != null) {
+                if (providedInCopy.node.text != null || providedInCopy.node.text != '') {
+                    injectableObj.providedIn = providedInCopy.node.text;
+                }
+            }
+
+            // Add injectable to list
+            injectables.push(injectableObj);
+        });
+        this.projectInjectables = injectables;
     }
 
     /**
@@ -398,20 +498,24 @@ export interface ProjectModule {
     path: string;
     imports: string[];
     declarations: string[];
-    providers: string[] | null;
+    providers: string[];
+    internal: boolean | undefined;
 };
 
 export interface ProjectComponent {
     name: string;
     path: string;
-    selector: string;
+    selector: string | undefined;
     injectedDependencies: string[];
+    changeDetection: 'Default' | 'OnPush' | undefined;
+    inputs: string[];
+    outputs: string[];
 }
 
 export interface ProjectInjectable {
     name: string;
     path: string;
-    providedIn: string | null;
+    providedIn: string | undefined;
 }
 
 export type ProjectDiagramMetadata = {
