@@ -33,12 +33,21 @@
         resetToggles();
     });
 
-    // Event listener for external modules toggle
-    document.getElementById('ext-module-toggle').addEventListener('change', function() {
-        // Hide containers and send a message to the extension
-        vscode.postMessage({ command: 'FILTER-NODE-GROUPS', data: [{ group: 'externalModule', state: this.checked }] });
-        hideDetailContainers();
+    // Loop toggles and add a listener
+    document.querySelectorAll('.toggle-input').forEach(function(input) {
+        input.addEventListener('change', function() {
+            // Get the states of all toggles
+            let toggleStates = [];
+            document.querySelectorAll('.toggle-input').forEach(function(item) {
+                toggleStates.push({ group: item.name, state: item.checked });
+            });
+
+            // Send a message to the extension
+            vscode.postMessage({ command: 'FILTER-NODE-GROUPS', data: toggleStates });
+            hideDetailContainers();
+        });
     });
+
 }());
 
 /**
@@ -187,5 +196,7 @@ function hideDetailContainers() {
  * Resets all toggles on toolbar.
  */
 function resetToggles() {
-    document.getElementById('ext-module-toggle').checked = true;
+    document.querySelectorAll('.toggle-input').forEach(function(element) {
+        element.checked = true;
+    });
 }
