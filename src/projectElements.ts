@@ -212,6 +212,23 @@ export class ProjectElements {
     }
 
     /**
+     * Filters network nodes based on group.
+     * @param groupsToRemove Group(s) to remove from network nodes list.
+     * @returns Altered project diagram metadata ready for Vis JS to display.
+     */
+    public filterNetworkNodes(groupsToRemove: string[]): ProjectDiagramMetadata {
+        const existingNodes: Node[] = this._projectDiagramMetadata.data.nodes as Node[];
+        const filteredNodes: Node[] = existingNodes.filter((node) => !groupsToRemove.includes(node.group!));
+        return {
+            data: {
+                nodes: filteredNodes,
+                edges: this._projectDiagramMetadata.data.edges,
+            },
+            options: this._projectDiagramMetadata.options
+        } as ProjectDiagramMetadata;
+    }
+
+    /**
      * Gets project modules.
      */
     private resolveProjectModules(): void {

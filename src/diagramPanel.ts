@@ -70,7 +70,15 @@ export class DiagramPanel {
                 projectElements.generateDiagramMetadata();
                 this.showDiagramOnPanel(projectElements.diagramMetadata);
             } else if (message.command === 'FILTER-NODE-GROUPS') {
+                // Get group states sent from webview and filter to find groups to remove
+                const groupStates: { group: string, state: boolean }[] = message.data;
+                const groupsToRemove: string[] = groupStates
+                    .filter((groupState) => groupState.state === false)
+                    .map((groupState) => groupState.group);
                 
+                // Filter the list and display the altered nodes
+                const projectElements: ProjectElements = ProjectElements.getInstance();
+                this.showDiagramOnPanel(projectElements.filterNetworkNodes(groupsToRemove));
             }
         });
     }
