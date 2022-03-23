@@ -40,6 +40,11 @@ export class ProjectElements {
         return this._networkNodesLookup;
     }
 
+    private _networkNodeMetadataLookup: LookupObject<ProjectNodeMetadata> = {};
+    public get networkNodeMetadataLookup(): LookupObject<ProjectNodeMetadata> {
+        return this._networkNodeMetadataLookup;
+    }
+
     private constructor() { }
 
     /**
@@ -94,6 +99,7 @@ export class ProjectElements {
 
         // Create lookup for created nodes
         this._networkNodesLookup = {};
+        this._networkNodeMetadataLookup = {};
         
         // Create nodes
         this.projectModules.forEach((module) => {
@@ -101,16 +107,19 @@ export class ProjectElements {
             const moduleNode: Node = { id: module.name, label: module.name, group: moduleGroup };
             networkNodes.push(moduleNode);
             this._networkNodesLookup[module.name] = moduleNode;
+            this._networkNodeMetadataLookup[module.name] = this.generateModuleNodeMetadata(module);
         });
         this.projectComponents.forEach((component) => {
             const componentNode: Node = { id: component.name, label: component.name, group: 'component' };
             networkNodes.push(componentNode);
             this._networkNodesLookup[component.name] = componentNode;
+            this._networkNodeMetadataLookup[component.name] = this.generateComponentNodeMetadata(component);
         });
         this.projectInjectables.forEach((injectable) => {
             const injectableNode: Node = { id: injectable.name, label: injectable.name, group: 'injectable' };
             networkNodes.push(injectableNode);
             this._networkNodesLookup[injectable.name] = injectableNode;
+            this._networkNodeMetadataLookup[injectable.name] = this.generateInjectableNodeMetadata(injectable);
         });
 
         // Create edges
@@ -326,7 +335,7 @@ export class ProjectElements {
     /**
      * Gets project injectables (services).
      */
-    private resolveProjectInjectables() {
+    private resolveProjectInjectables(): void {
         const injectables: ProjectInjectable[] = [];
         // Map details from all found injectables
         this.workspaceSymbols.getAllInjectable().forEach((injectable) => {
@@ -490,6 +499,87 @@ export class ProjectElements {
         }
         return longestParentDepth;
     }
+
+    /**
+     * Generates module metadata to display on the webview UI when node is selected.
+     * @param module Module to generate data from.
+     * @returns Metadata ready to inject into HTML.
+     */
+    private generateModuleNodeMetadata(module: ProjectModule): ProjectNodeMetadata {
+        let importsText;
+        let declarationsText;
+        let providersText;
+        
+        // Create line separated lists from arrays
+        if (module.internal === true) {
+            if (module.imports.length > 0) {
+                importsText = module.imports.join(',<br>');
+            }
+            if (module.declarations.length > 0) {
+                declarationsText = module.declarations.join(',<br>');
+            }
+            if (module.providers.length > 0) {
+                providersText = module.providers.join(',<br>');
+            }
+        } else {
+            // Text to display if module is external
+            importsText = 'N/A';
+            declarationsText = 'N/A';
+            providersText = 'N/A';
+        }
+
+        // Compile the metadata
+        return {
+            name: module.name,
+            imports: importsText || 'None',
+            declarations: declarationsText || 'None',
+            providers: providersText || 'None',
+            type: module.internal === true ? 'Internal' : 'External',
+        };
+    }
+
+    /**
+     * Generates component metadata to display on the webview UI when node is selected.
+     * @param component Component to generate data from.
+     * @returns Metadata ready to inject into HTML.
+     */
+    private generateComponentNodeMetadata(component: ProjectComponent): ProjectNodeMetadata {
+        // Create line separated lists from arrays
+        let injectedDependenciesText;
+        if (component.injectedDependencies.length > 0) {
+            injectedDependenciesText = component.injectedDependencies.join(',<br>');
+        }
+        let inputsText;
+        if (component.inputs.length > 0) {
+            inputsText = component.inputs.join(',<br>');
+        }
+        let outputsText;
+        if (component.outputs.length > 0) {
+            outputsText = component.outputs.join(',<br>');
+        }
+
+        // Compile the metadata
+        return {
+            name: component.name,
+            selector: component.selector,
+            changeDetection: component.changeDetection,
+            injectedDependencies: injectedDependenciesText || 'None',
+            inputs: inputsText || 'None',
+            outputs: outputsText || 'None',
+        };
+    }
+
+    /**
+     * Generates injectable metadata to display on the webview UI when node is selected.
+     * @param injectable Injectable to generate data from.
+     * @returns Metadata ready to inject into HTML.
+     */
+     private generateInjectableNodeMetadata(injectable: ProjectInjectable): ProjectNodeMetadata {
+        return {
+            name: injectable.name,
+            providedIn: injectable.providedIn === undefined ? 'N/A' : injectable.providedIn,
+        };
+    }
 }
 
 export interface ProjectModule {
@@ -520,4 +610,19 @@ export interface ProjectInjectable {
 export type ProjectDiagramMetadata = {
     data: Data;
     options: Options;
+};
+
+export type ProjectNodeMetadata = {
+    name: string;
+    containerId?: string;
+    imports?: string;
+    declarations?: string;
+    providers?: string;
+    type?: string;
+    selector?: string;
+    changeDetection?: string;
+    injectedDependencies?: string;
+    inputs?: string;
+    outputs?: string;
+    providedIn?: string;
 };

@@ -54,6 +54,8 @@ export class DiagramPanel {
                 }
             } else if (message.command === 'NODE-DOUBLE-CLICKED') {
                 this.openFileInEditor(message.data);
+            } else if (message.command === 'NODE-SELECTED') {
+                this.getMetadataForNode(message.data);
             }
         });
     }
@@ -160,6 +162,33 @@ export class DiagramPanel {
     }
 
     /**
+     * Gets metadata for a given node and returns to the webview for display. 
+     * @param nodeId Node to get metadata for.
+     */
+    private getMetadataForNode(nodeId: string): void {
+        // Get the group and metadata associated with the given node
+        const projectElements = ProjectElements.getInstance();
+        const nodeGroup = projectElements.networkNodesLookup[nodeId]?.group;
+        const nodeMetadata = projectElements.networkNodeMetadataLookup[nodeId];
+
+        if (nodeMetadata != null && nodeGroup != null) {
+            // Set the container ID to inject the metadata into
+            if (nodeGroup === 'module' || nodeGroup === 'externalModule') {
+                nodeMetadata.containerId = 'module-details-container';
+            } else if (nodeGroup === 'component') {
+                nodeMetadata.containerId = 'component-details-container';
+            } else if (nodeGroup === 'injectable') {
+                nodeMetadata.containerId = 'injectable-details-container';
+            }
+
+            // Send serialized JSON to the webview
+            this._panel.webview.postMessage({ command: 'DISPLAY-METADATA', data: nodeMetadata });
+        } else {
+            vscode.window.showWarningMessage('Unable to load data for selected item.');
+        }
+    }
+
+    /**
      * Generates HTML content for the Webview to render.
      * @returns HTML String.
      */
@@ -211,11 +240,71 @@ export class DiagramPanel {
                 <link href="${fontAwesomeStylesUri}" rel="stylesheet">
             </head>
             <body>
-                <div class="toolbar">
-                    <button id="download-btn">
-                        <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><path d="M18,15v3H6v-3H4v3c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2v-3H18z M17,11l-1.41-1.41L13,12.17V4h-2v8.17L8.41,9.59L7,11l5,5 L17,11z"/></g></svg>
-                        <span>Save as Image</span>
-                    </button>
+                <div>
+                    <div class="toolbar">
+                        <button id="download-btn">
+                            <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><path d="M18,15v3H6v-3H4v3c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2v-3H18z M17,11l-1.41-1.41L13,12.17V4h-2v8.17L8.41,9.59L7,11l5,5 L17,11z"/></g></svg>
+                            <span>Save as Image</span>
+                        </button>
+                    </div>
+                    <div id="module-details-container" class="details-container">
+                        <div class="row">
+                            <div class="col key">Name:</div>
+                            <div class="col val" id="metadata-module-name"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col key">Imports:</div>
+                            <div class="col val" id="metadata-module-imports"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col key">Declarations:</div>
+                            <div class="col val" id="metadata-module-declarations"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col key">Providers:</div>
+                            <div class="col val" id="metadata-module-providers"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col key">Type:</div>
+                            <div class="col val" id="metadata-module-type"></div>
+                        </div>
+                    </div>
+                    <div id="component-details-container" class="details-container">
+                        <div class="row">
+                            <div class="col key">Name:</div>
+                            <div class="col val" id="metadata-component-name"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col key">Selector:</div>
+                            <div class="col val" id="metadata-component-selector"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col key">Change Detection:</div>
+                            <div class="col val" id="metadata-component-changedetection"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col key">Injected Dependencies:</div>
+                            <div class="col val" id="metadata-component-injecteddependencies"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col key">Inputs:</div>
+                            <div class="col val" id="metadata-component-inputs"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col key">Outputs:</div>
+                            <div class="col val" id="metadata-component-outputs"></div>
+                        </div>
+                    </div>
+                    <div id="injectable-details-container" class="details-container">
+                        <div class="row">
+                            <div class="col key">Name:</div>
+                            <div class="col val" id="metadata-injectable-name"></div>
+                        </div>
+                        <div class="row">
+                            <div class="col key">Provided In:</div>
+                            <div class="col val" id="metadata-injectable-providedin"></div>
+                        </div>
+                    </div>
                 </div>
                 <div id="project-network"></div>
                 <script nonce="${nonce}" src="${scriptUri}"></script>

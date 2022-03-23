@@ -22,6 +22,37 @@
     fill: var(--vscode-button-foreground);
 }
 
+
+/* --- Details container styles --- */
+.details-container {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    z-index: 1;
+    margin-top: 0.5rem;
+    border: 3px solid var(--vscode-focusBorder);
+    background-color: #FAF9F6;
+    color: #272B2E;
+}
+
+.details-container .row {
+    display: flex;
+    align-items: baseline;
+    padding: 0 0.5rem 0.25rem;
+    border-bottom: 2px solid var(--vscode-focusBorder);
+}
+
+.details-container .row:last-child {
+    border-bottom: 0;
+}
+
+.details-container .col.key {
+    padding-right: 0.5rem;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+
 /* --- Vis JS Network styles --- */
 #project-network {
     height: calc(100vh - 4.25rem);

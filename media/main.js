@@ -9,6 +9,8 @@
         const message = event.data;
         if (message.command === 'DISPLAY-DIAGRAM') {
             displayDiagram(message.data, container, vscode);
+        } else if (message.command === 'DISPLAY-METADATA') {
+            displayNodeMetaData(message.data);
         }
     });
 
@@ -69,7 +71,55 @@ function displayDiagram(networkMetadata, container, vscode) {
                 });
             }
         });
+
+        // Event listener for node selection
+        network.on('selectNode', ({ nodes, edges, event, pointer }) => {
+            if (nodes != null && nodes.length > 0) {
+                vscode.postMessage({
+                    command: 'NODE-SELECTED',
+                    data: nodes[0],
+                });
+            }
+        });
+
+        // Event listener for node deselection
+        network.on('deselectNode', ({ nodes, edges, event, pointer, previousSelection }) => {
+            // Hide all detail containers on node deselect
+            document.querySelectorAll('.details-container').forEach((container) => container.style.display = 'none');
+        });
     }, () => {});
+}
+
+/**
+ * Displays metadata for a selected node.
+ * @param {*} nodeMetadata Metadata for selected node.
+ */
+function displayNodeMetaData(nodeMetadata) {   
+    // Set the metadata into the given fields
+    if (nodeMetadata.containerId === 'module-details-container') {
+        // Modules
+        document.getElementById('metadata-module-name').innerHTML = nodeMetadata.name;
+        document.getElementById('metadata-module-imports').innerHTML = nodeMetadata.imports;
+        document.getElementById('metadata-module-declarations').innerHTML = nodeMetadata.declarations;
+        document.getElementById('metadata-module-providers').innerHTML = nodeMetadata.providers;
+        document.getElementById('metadata-module-type').innerHTML = nodeMetadata.type;
+    } else if (nodeMetadata.containerId === 'component-details-container') {
+        // Components
+        document.getElementById('metadata-component-name').innerHTML = nodeMetadata.name;
+        document.getElementById('metadata-component-selector').innerHTML = nodeMetadata.selector;
+        document.getElementById('metadata-component-changedetection').innerHTML = nodeMetadata.changeDetection;
+        document.getElementById('metadata-component-injecteddependencies').innerHTML = nodeMetadata.injectedDependencies;
+        document.getElementById('metadata-component-inputs').innerHTML = nodeMetadata.inputs;
+        document.getElementById('metadata-component-outputs').innerHTML = nodeMetadata.outputs;
+    } else if (nodeMetadata.containerId === 'injectable-details-container') {
+        // Injectables
+        document.getElementById('metadata-injectable-name').innerHTML = nodeMetadata.name;
+        document.getElementById('metadata-injectable-providedin').innerHTML = nodeMetadata.providedIn;
+    }
+
+    // Make the container visible
+    const container = document.getElementById(nodeMetadata.containerId);
+    container.style.display = 'flex';
 }
 
 /**
