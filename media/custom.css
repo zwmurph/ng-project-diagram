@@ -5,17 +5,18 @@
     border-bottom: 1px solid var(--vscode-focusBorder);
 }
 
+/* Buttons and their icons */
 .toolbar button {
     width: fit-content;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+    margin-right: 0.5rem;
 }
-
-.toolbar button#download-btn {
+.toolbar button.icon-btn {
     display: inline-flex;
     align-items: flex-end;
 }
-.toolbar button#download-btn .download-icon {
+.toolbar button.icon-btn .svg-icon {
     margin-right: 0.25rem;
     height: 18px;
     width: 18px;

@@ -18,6 +18,18 @@
     document.getElementById('download-btn').addEventListener('click', () => {
         sendNetworkDataUrl(vscode, container);
     });
+
+    // Event listener for reset layout button
+    document.getElementById('reset-btn').addEventListener('click', () => {
+        // Send a message to the extension
+        vscode.postMessage({ command: 'RESET-LAYOUT' });
+    });
+
+    // Event listener for sync button
+    document.getElementById('sync-btn').addEventListener('click', () => {
+        // Send a message to the extension
+        vscode.postMessage({ command: 'SYNC-FILE-CHANGES' });
+    });
 }());
 
 /**

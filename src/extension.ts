@@ -25,10 +25,10 @@ export function activate(context: vscode.ExtensionContext) {
 				projectElements.resolveAllWorkspaceSymbols();
 
 				// Get project diagram data
-				const diagramData: ProjectDiagramMetadata = projectElements.getProjectDiagramData();
+				projectElements.generateDiagramMetadata();
 				
 				// Display the diagram on the webview panel
-				DiagramPanel.activePanel?.showDiagramOnPanel(diagramData);
+				DiagramPanel.activePanel?.showDiagramOnPanel(projectElements.diagramMetadata);
 			} else {
 				vscode.window.showErrorMessage('tsconfig.json cannot be found');
 			}

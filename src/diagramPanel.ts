@@ -56,6 +56,16 @@ export class DiagramPanel {
                 this.openFileInEditor(message.data);
             } else if (message.command === 'NODE-SELECTED') {
                 this.getMetadataForNode(message.data);
+            } else if (message.command === 'RESET-LAYOUT') {
+                // Get the last diagram metadata generated and send to panel to display
+                this.showDiagramOnPanel(ProjectElements.getInstance().diagramMetadata);
+            } else if (message.command === 'SYNC-FILE-CHANGES') {
+                // Resolve all workspace symbols to include any new changes in the project
+                const projectElements: ProjectElements = ProjectElements.getInstance();
+                projectElements.resolveAllWorkspaceSymbols();
+                // Create new diagram metadata and send to panel to display
+                projectElements.generateDiagramMetadata();
+                this.showDiagramOnPanel(projectElements.diagramMetadata);
             }
         });
     }
@@ -242,9 +252,17 @@ export class DiagramPanel {
             <body>
                 <div>
                     <div class="toolbar">
-                        <button id="download-btn">
-                            <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><path d="M18,15v3H6v-3H4v3c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2v-3H18z M17,11l-1.41-1.41L13,12.17V4h-2v8.17L8.41,9.59L7,11l5,5 L17,11z"/></g></svg>
+                        <button id="download-btn" class="icon-btn">
+                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><g><rect fill="none" height="24" width="24"/></g><g><path d="M18,15v3H6v-3H4v3c0,1.1,0.9,2,2,2h12c1.1,0,2-0.9,2-2v-3H18z M17,11l-1.41-1.41L13,12.17V4h-2v8.17L8.41,9.59L7,11l5,5 L17,11z"/></g></svg>
                             <span>Save as Image</span>
+                        </button>
+                        <button id="reset-btn" class="icon-btn">
+                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                            <span>Reset Layout</span>
+                        </button>
+                        <button id="sync-btn" class="icon-btn">
+                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><g><rect fill="none" height="24" width="24" x="0"/></g><g><g><polygon points="7.41,13.41 6,12 2,16 6,20 7.41,18.59 5.83,17 21,17 21,15 5.83,15"/><polygon points="16.59,10.59 18,12 22,8 18,4 16.59,5.41 18.17,7 3,7 3,9 18.17,9"/></g></g></svg>
+                            <span>Sync File Changes</span>
                         </button>
                     </div>
                     <div id="module-details-container" class="details-container">

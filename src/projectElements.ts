@@ -35,14 +35,20 @@ export class ProjectElements {
     }
 
     // Network node lookup
-    private _networkNodesLookup: LookupObject<Node> = {};
+    private _networkNodesLookup: LookupObject<Node>;
     public get networkNodesLookup(): LookupObject<Node> {
         return this._networkNodesLookup;
     }
 
-    private _networkNodeMetadataLookup: LookupObject<ProjectNodeMetadata> = {};
+    private _networkNodeMetadataLookup: LookupObject<ProjectNodeMetadata>;
     public get networkNodeMetadataLookup(): LookupObject<ProjectNodeMetadata> {
         return this._networkNodeMetadataLookup;
+    }
+
+    // Project diagram data
+    private _projectDiagramMetadata: ProjectDiagramMetadata;
+    public get diagramMetadata(): ProjectDiagramMetadata {
+        return this._projectDiagramMetadata;
     }
 
     private constructor() { }
@@ -89,10 +95,9 @@ export class ProjectElements {
     }
 
     /**
-     * Gets the project diagram network data and options which are used by Vis.js to create the diagram.
-     * @returns Network data and options for Vis.js.
+     * Generates the project diagram network data and options which are used by Vis.js to create the diagram.
      */
-    public getProjectDiagramData(): ProjectDiagramMetadata {
+    public generateDiagramMetadata(): void {
         // The diagram created with Vis.js uses network terminology. Create containers for the network nodes and edges
         const networkNodes: Node[] = [];
         const networkEdges: Edge[] = [];
@@ -190,8 +195,8 @@ export class ProjectElements {
         // Adjust the node levels to provide a more top-down look
         const levelAdjustedNodes = this.calculateNodeLevels(networkNodes, networkEdges);
 
-        // Return network data for the project
-        return {
+        // Set network data for the project
+        this._projectDiagramMetadata = {
             data: { nodes: levelAdjustedNodes, edges: networkEdges },
             options: this.getNetworkOptions(),
         } as ProjectDiagramMetadata;
