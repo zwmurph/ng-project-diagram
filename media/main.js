@@ -16,6 +16,7 @@
 
     // Event listener for download button
     document.getElementById('download-btn').addEventListener('click', () => {
+        toggleDropdownContent('hide');
         sendNetworkDataUrl(vscode, container);
     });
 
@@ -24,6 +25,7 @@
         // Send a message to the extension
         vscode.postMessage({ command: 'RESET-LAYOUT' });
         resetToggles();
+        toggleDropdownContent('hide');
     });
 
     // Event listener for sync button
@@ -31,6 +33,7 @@
         // Send a message to the extension
         vscode.postMessage({ command: 'SYNC-FILE-CHANGES' });
         resetToggles();
+        toggleDropdownContent('hide');
     });
 
     // Loop toggles and add a listener
@@ -48,6 +51,10 @@
         });
     });
 
+    // Event listener for dropdown
+    document.getElementById('dropdown-btn').addEventListener('click', () => {
+        toggleDropdownContent();
+    });
 }());
 
 /**
@@ -199,4 +206,25 @@ function resetToggles() {
     document.querySelectorAll('.toggle-input').forEach(function(element) {
         element.checked = true;
     });
+}
+
+/**
+ * Toggles dropdown content and icon.
+ * @param {*} state Show or hide.
+ */
+function toggleDropdownContent(state) {
+    // Toggle dropdown content
+    if (state === 'show') {
+        document.querySelector('#dropdown-toggle-content').classList.add('shown');
+        document.querySelector('#drop-down-icon').classList.remove('shown');
+        document.querySelector('#drop-up-icon').classList.add('shown');
+    } else if (state === 'hide') {
+        document.querySelector('#dropdown-toggle-content').classList.remove('shown');
+        document.querySelector('#drop-down-icon').classList.add('shown');
+        document.querySelector('#drop-up-icon').classList.remove('shown');
+    } else {
+        document.querySelector('#dropdown-toggle-content').classList.toggle('shown');
+        document.querySelector('#drop-down-icon').classList.toggle('shown');
+        document.querySelector('#drop-up-icon').classList.toggle('shown');
+    }
 }
