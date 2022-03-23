@@ -105,6 +105,16 @@ export class DiagramPanel {
     }
 
     /**
+     * Creates a URI to use in the webview.
+     * @param fileName File name (including extension). File should be inside 'media' directory.
+     * @returns VS Code URI for given file.
+     */
+    public createUriForLocalResource(fileName: string): vscode.Uri {
+        const path = vscode.Uri.joinPath(this._extensionUri, 'media', fileName);
+        return this._panel.webview.asWebviewUri(path);
+    }
+
+    /**
      * Gets options for the webview panel.
      * @param extensionUri Base URI for extension, used to limit which content can be loaded from the webview.
      * @returns Webview options.
@@ -216,18 +226,9 @@ export class DiagramPanel {
         const visJsScriptUri = (visJsScriptPath).with({ 'scheme': 'vscode-resource' });
 
         // Create URI's for stylesheets
-        const resetStylesPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css');
-        const resetStylesUri = webview.asWebviewUri(resetStylesPath);
-
-        const vscodeStylesPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css');
-        const vscodeStylesUri = webview.asWebviewUri(vscodeStylesPath);
-
-        const mainStylesPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'custom.css');
-        const mainStylesUri = webview.asWebviewUri(mainStylesPath);
-
-        const fontAwesomeStylePath = vscode.Uri.parse('https://use.fontawesome.com/releases/v5.15.4/css/all.css');
-        const fontAwesomeStylesUri = webview.asWebviewUri(fontAwesomeStylePath);
-        const fontAwesomeDomain = 'https://use.fontawesome.com/';
+        const resetStylesUri = this.createUriForLocalResource('reset.css');
+        const vscodeStylesUri = this.createUriForLocalResource('vscode.css');
+        const mainStylesUri = this.createUriForLocalResource('custom.css');
 
         // Use a token to only allow specific scripts to run - set in Content-Security-Policy.
         const nonce = getToken();
@@ -240,9 +241,8 @@ export class DiagramPanel {
                 <meta http-equiv="Content-Security-Policy" content="
                     default-src 'none';
                     script-src 'nonce-${nonce}';
-                    style-src ${webview.cspSource} 'unsafe-inline' ${fontAwesomeDomain};
+                    style-src ${webview.cspSource} 'unsafe-inline';
                     img-src ${webview.cspSource} data:;
-                    font-src ${fontAwesomeDomain};
                 ">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>NG Project Diagram</title>
@@ -250,7 +250,6 @@ export class DiagramPanel {
                 <link href="${resetStylesUri}" rel="stylesheet">
                 <link href="${vscodeStylesUri}" rel="stylesheet">
                 <link href="${mainStylesUri}" rel="stylesheet">
-                <link href="${fontAwesomeStylesUri}" rel="stylesheet">
             </head>
             <body>
                 <div>

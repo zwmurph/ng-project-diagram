@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { WorkspaceSymbols } from 'ngast';
 import { getLookupFromArray, LookupObject } from './utils';
-import { Data, Edge, IdType, Node, NodeOptions, Options } from 'vis-network';
+import { Data, Edge, IdType, Node, Options } from 'vis-network';
+import { DiagramPanel } from './diagramPanel';
 
 /**
  * Class that resolves and holds all symbols for the Angular project.
@@ -399,12 +400,7 @@ export class ProjectElements {
                 font: {
                     color: editorThemeIdFontColourMap[editorThemeId],
                 },
-                shape: 'icon',
-                icon: {
-                    face: "'Font Awesome 5 Free'",
-                    size: 50,
-                    weight: "900",
-                },
+                size: 15,
             },
             edges: {
                 length: 300,
@@ -428,23 +424,26 @@ export class ProjectElements {
                 keyboard: true,
             },
         };
-
+       
         // Options for node groups, individual node options will override these
-        const moduleNodeOptions: NodeOptions = {
-            icon: { code: "\uf07b", color: "#0096FF" },
-        };
-        const componentNodeOptions: NodeOptions = {
-            icon: { code: "\uf12e", color: "#40B5AD" },
-        };
-        const injectableNodeOptions: NodeOptions = {
-            icon: { code: "\uf362", color: "#5D3FD3" },
-        };
         const allGroupOptions: Options = {
             groups: {
-                module: moduleNodeOptions,
-                externalModule: moduleNodeOptions,
-                component: componentNodeOptions,
-                injectable: injectableNodeOptions,
+                module: {
+                    shape: 'image',
+                    image: '' + DiagramPanel.activePanel?.createUriForLocalResource('module-icon.svg'),
+                },
+                externalModule: {
+                    shape: 'image',
+                    image: '' + DiagramPanel.activePanel?.createUriForLocalResource('external-module-icon.svg'),
+                },
+                component: {
+                    shape: 'image',
+                    image: '' + DiagramPanel.activePanel?.createUriForLocalResource('component-icon.svg'),
+                },
+                injectable: {
+                    shape: 'image',
+                    image: '' + DiagramPanel.activePanel?.createUriForLocalResource('injectable-icon.svg'),
+                },
             },
         };
 
