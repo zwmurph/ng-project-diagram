@@ -23,18 +23,21 @@
     document.getElementById('reset-btn').addEventListener('click', () => {
         // Send a message to the extension
         vscode.postMessage({ command: 'RESET-LAYOUT' });
+        resetToggles();
     });
 
     // Event listener for sync button
     document.getElementById('sync-btn').addEventListener('click', () => {
         // Send a message to the extension
         vscode.postMessage({ command: 'SYNC-FILE-CHANGES' });
+        resetToggles();
     });
 
     // Event listener for external modules toggle
     document.getElementById('ext-module-toggle').addEventListener('change', function() {
-        // Send a message to the extension
+        // Hide containers and send a message to the extension
         vscode.postMessage({ command: 'FILTER-NODE-GROUPS', data: [{ group: 'externalModule', state: this.checked }] });
+        hideDetailContainers();
     });
 }());
 
@@ -83,7 +86,7 @@ function displayDiagram(networkMetadata, container, vscode) {
     // Event listener for node deselection
     network.on('deselectNode', ({ nodes, edges, event, pointer, previousSelection }) => {
         // Hide all detail containers on node deselect
-        document.querySelectorAll('.details-container').forEach((container) => container.style.display = 'none');
+        hideDetailContainers();
     });
 }
 
@@ -170,4 +173,19 @@ function createNavigationUi(networkContainer) {
     // Zoom out
     networkContainer.querySelector('.vis-network .vis-navigation .vis-button.vis-zoomOut')
         .innerHTML += '<svg class="nav-icon nav-zoom" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg>';
+}
+
+/**
+ * Hides detail containers from view.
+ */
+function hideDetailContainers() {
+    // Change styling to none on all containers
+    document.querySelectorAll('.details-container').forEach((container) => container.style.display = 'none');
+}
+
+/**
+ * Resets all toggles on toolbar.
+ */
+function resetToggles() {
+    document.getElementById('ext-module-toggle').checked = true;
 }
