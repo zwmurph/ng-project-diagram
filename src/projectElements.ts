@@ -203,6 +203,14 @@ export class ProjectElements {
     }
 
     /**
+     * Updates network options in project diagram metadata without changing the data itself.
+     */
+    public updateNetworkOptions(): void {
+        // Set network data for the project
+        this._projectDiagramMetadata.options = this.getNetworkOptions();
+    }
+
+    /**
      * Gets project modules.
      */
     private resolveProjectModules(): void {

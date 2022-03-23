@@ -57,8 +57,11 @@ export class DiagramPanel {
             } else if (message.command === 'NODE-SELECTED') {
                 this.getMetadataForNode(message.data);
             } else if (message.command === 'RESET-LAYOUT') {
+                // Update the network options in case UI theme has changed
+                const projectElements = ProjectElements.getInstance();
+                projectElements.updateNetworkOptions();
                 // Get the last diagram metadata generated and send to panel to display
-                this.showDiagramOnPanel(ProjectElements.getInstance().diagramMetadata);
+                this.showDiagramOnPanel(projectElements.diagramMetadata);
             } else if (message.command === 'SYNC-FILE-CHANGES') {
                 // Resolve all workspace symbols to include any new changes in the project
                 const projectElements: ProjectElements = ProjectElements.getInstance();
