@@ -30,6 +30,12 @@
         // Send a message to the extension
         vscode.postMessage({ command: 'SYNC-FILE-CHANGES' });
     });
+
+    // Event listener for external modules toggle
+    document.getElementById('ext-module-toggle').addEventListener('change', function() {
+        // Send a message to the extension
+        vscode.postMessage({ command: 'FILTER-NODE-GROUPS', data: { group: 'externalModule', state: this.checked } });
+    });
 }());
 
 /**

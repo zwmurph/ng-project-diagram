@@ -69,6 +69,8 @@ export class DiagramPanel {
                 // Create new diagram metadata and send to panel to display
                 projectElements.generateDiagramMetadata();
                 this.showDiagramOnPanel(projectElements.diagramMetadata);
+            } else if (message.command === 'FILTER-NODE-GROUPS') {
+                
             }
         });
     }
@@ -266,6 +268,10 @@ export class DiagramPanel {
                             <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" enable-background="new 0 0 24 24" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><g><rect fill="none" height="24" width="24" x="0"/></g><g><g><polygon points="7.41,13.41 6,12 2,16 6,20 7.41,18.59 5.83,17 21,17 21,15 5.83,15"/><polygon points="16.59,10.59 18,12 22,8 18,4 16.59,5.41 18.17,7 3,7 3,9 18.17,9"/></g></g></svg>
                             <span>Sync File Changes</span>
                         </button>
+                        <div class="network-toggle">
+                            <input type="checkbox" id="ext-module-toggle" name="toggle-ext-modules" checked />
+                            <label for="ext-module-toggle">Show External Modules?</label>
+                        </div>
                     </div>
                     <div id="module-details-container" class="details-container">
                         <div class="row">

@@ -23,6 +23,12 @@
     fill: var(--vscode-button-foreground);
 }
 
+/* Toggles */
+.toolbar .network-toggle {
+    display: inline-flex;
+    margin-right: 0.5rem;
+}
+
 
 /* --- Details container styles --- */
 .details-container {
