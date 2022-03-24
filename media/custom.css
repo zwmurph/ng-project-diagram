@@ -1,34 +1,105 @@
 /* --- Toolbar styles --- */
 .toolbar {
-    display: inline-flex;
-    align-items: center;
-    width: 100%;
+    display: flex;
     margin-top: 1rem;
     padding: 0 0.25rem 0.25rem 0.25rem;
     border-bottom: 1px solid var(--vscode-focusBorder);
 }
 
+/* Buttons and their icons */
 .toolbar button {
     width: fit-content;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+    margin-right: 0.5rem;
 }
-
-.toolbar button#download-btn {
+.toolbar button.icon-btn {
     display: inline-flex;
     align-items: flex-end;
 }
-.toolbar button#download-btn .download-icon {
+.toolbar button.icon-btn .svg-icon {
     margin-right: 0.25rem;
     height: 18px;
     width: 18px;
     fill: var(--vscode-button-foreground);
 }
+.toolbar button.icon-btn .svg-icon.right {
+    margin-right: 0;
+    margin-left: 0.25rem;
+}
 
+/* Dropdown menu for node visibility toggles */
+.toolbar .dropdown-toggle-container {
+    display: inline-block;
+    position: relative;
+}
+
+.toolbar #dropdown-btn .svg-icon {
+    display: none;
+}
+.toolbar #dropdown-btn .svg-icon.shown {
+    display: block;
+}
+
+.toolbar .dropdown-content {
+    display: none;
+    position: absolute;
+    flex-direction: column;
+    min-width: 14rem;
+    border: 3px solid var(--vscode-focusBorder);
+    background-color: #FAF9F6;
+    color: #272B2E;
+    z-index: 1;
+}
+.toolbar .dropdown-content.shown {
+    display: flex;
+}
+
+.toolbar .dropdown-content .row {
+    display: flex;
+    align-items: baseline;
+    padding: 0.25rem 0.5rem 0.25rem 0.5rem;
+    border-bottom: 2px solid var(--vscode-focusBorder);
+}
+.toolbar .dropdown-content .row:last-child {
+    border-bottom: 0;
+}
+
+/* Transparency toggle */
 .toolbar .transparency-toggle {
     display: inline-flex;
     margin-left: 0.5rem;
 }
+
+
+/* --- Details container styles --- */
+.details-container {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    z-index: 1;
+    margin-top: 0.5rem;
+    border: 3px solid var(--vscode-focusBorder);
+    background-color: #FAF9F6;
+    color: #272B2E;
+}
+
+.details-container .row {
+    display: flex;
+    align-items: baseline;
+    padding: 0 0.5rem 0.25rem;
+    border-bottom: 2px solid var(--vscode-focusBorder);
+}
+.details-container .row:last-child {
+    border-bottom: 0;
+}
+
+.details-container .col.key {
+    padding-right: 0.5rem;
+    font-weight: bold;
+    font-size: 14px;
+}
+
 
 /* --- Vis JS Network styles --- */
 #project-network {

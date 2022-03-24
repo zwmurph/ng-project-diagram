@@ -8,13 +8,53 @@
         // Execute functions based on command sent in message
         const message = event.data;
         if (message.command === 'DISPLAY-DIAGRAM') {
-            displayDiagram(message.data, container);
+            displayDiagram(message.data, container, vscode);
+        } else if (message.command === 'DISPLAY-METADATA') {
+            displayNodeMetaData(message.data);
+        } else if (message.command === 'RESET-UI') {
+            resetUI(true, true, true);
         }
     });
 
     // Event listener for download button
     document.getElementById('download-btn').addEventListener('click', () => {
+        resetUI(false, true, false);
         sendNetworkDataUrl(vscode, container);
+    });
+
+    // Event listener for reset layout button
+    document.getElementById('reset-btn').addEventListener('click', () => {
+        resetUI(true, true, true);
+        // Send a message to the extension
+        vscode.postMessage({ command: 'RESET-LAYOUT' });
+    });
+
+    // Event listener for sync button
+    document.getElementById('sync-btn').addEventListener('click', () => {
+        resetUI(true, true, true);
+        // Send a message to the extension
+        vscode.postMessage({ command: 'SYNC-FILE-CHANGES' });
+    });
+
+    // Loop toggles and add a listener
+    document.querySelectorAll('.toggle-input').forEach(function(input) {
+        input.addEventListener('change', function() {
+            resetUI(false, false, true);
+
+            // Get the states of all toggles
+            let toggleStates = [];
+            document.querySelectorAll('.toggle-input').forEach(function(item) {
+                toggleStates.push({ group: item.name, state: item.checked });
+            });
+
+            // Send a message to the extension
+            vscode.postMessage({ command: 'FILTER-NODE-GROUPS', data: toggleStates });
+        });
+    });
+
+    // Event listener for dropdown
+    document.getElementById('dropdown-btn').addEventListener('click', () => {
+        toggleDropdownContent();
     });
 
     // Event listener for transparency toggle
@@ -27,14 +67,11 @@
  * Parses the network data into a Vis.js network and displays according to the options.
  * @param {*} networkMetadata Nodes and Edges to display along with Options for the Network.
  * @param {*} container HTMLElement to act as a container for the Network.
+ * @param {*} vscode VS Code API reference.
  */
-function displayDiagram(networkMetadata, container) {
-    console.log('data', networkMetadata.data);
-    console.log('options', networkMetadata.options);
-
-    // Create a new Vis.js network
+function displayDiagram(networkMetadata, container, vscode) {
     const network = new vis.Network(container, networkMetadata.data, networkMetadata.options);
-   
+
     // Update the UI with new icons
     createNavigationUi(container);
 
@@ -44,6 +81,82 @@ function displayDiagram(networkMetadata, container) {
         //   nodes on the canvas
         network.setOptions({ layout: { hierarchical: false } });
     });
+
+    // Event listener for single click
+    network.on('click', () => {
+        resetUI(false, true, false);
+    });
+
+    // Event listener for double click
+    network.on('doubleClick', ({ nodes }) => {
+        if (nodes != null && nodes.length > 0) {
+            vscode.postMessage({
+                command: 'NODE-DOUBLE-CLICKED',
+                data: nodes[0],
+            });
+        }
+    });
+
+    // Event listener for node selection
+    network.on('selectNode', ({ nodes }) => {
+        if (nodes != null && nodes.length > 0) {
+            vscode.postMessage({
+                command: 'NODE-SELECTED',
+                data: nodes[0],
+            });
+        }
+    });
+
+    // Event listener for node deselection
+    network.on('deselectNode', () => {
+        // Hide all detail containers on node deselect
+        resetUI(false, false, true);
+    });
+
+    // Event listener for canvas drag
+    network.on('dragStart', () => {
+        // Hide all detail containers on node deselect
+        resetUI(false, true, false);
+    });
+
+    // Event listeners for navigation buttons
+    document.querySelectorAll('.vis-navigation .vis-button').forEach(function(button) {
+        button.addEventListener('mousedown', function() {
+            resetUI(false, true, false);
+        });
+    });
+}
+
+/**
+ * Displays metadata for a selected node.
+ * @param {*} nodeMetadata Metadata for selected node.
+ */
+function displayNodeMetaData(nodeMetadata) {   
+    // Set the metadata into the given fields
+    if (nodeMetadata.containerId === 'module-details-container') {
+        // Modules
+        document.getElementById('metadata-module-name').innerHTML = nodeMetadata.name;
+        document.getElementById('metadata-module-imports').innerHTML = nodeMetadata.imports;
+        document.getElementById('metadata-module-declarations').innerHTML = nodeMetadata.declarations;
+        document.getElementById('metadata-module-providers').innerHTML = nodeMetadata.providers;
+        document.getElementById('metadata-module-type').innerHTML = nodeMetadata.type;
+    } else if (nodeMetadata.containerId === 'component-details-container') {
+        // Components
+        document.getElementById('metadata-component-name').innerHTML = nodeMetadata.name;
+        document.getElementById('metadata-component-selector').innerHTML = nodeMetadata.selector;
+        document.getElementById('metadata-component-changedetection').innerHTML = nodeMetadata.changeDetection;
+        document.getElementById('metadata-component-injecteddependencies').innerHTML = nodeMetadata.injectedDependencies;
+        document.getElementById('metadata-component-inputs').innerHTML = nodeMetadata.inputs;
+        document.getElementById('metadata-component-outputs').innerHTML = nodeMetadata.outputs;
+    } else if (nodeMetadata.containerId === 'injectable-details-container') {
+        // Injectables
+        document.getElementById('metadata-injectable-name').innerHTML = nodeMetadata.name;
+        document.getElementById('metadata-injectable-providedin').innerHTML = nodeMetadata.providedIn;
+    }
+
+    // Make the container visible
+    const container = document.getElementById(nodeMetadata.containerId);
+    container.style.display = 'flex';
 }
 
 /**
@@ -95,8 +208,8 @@ function sendNetworkDataUrl(vscode, networkContainer) {
 /**
  * Function that inserts SVG elements within existing controls of Vis Network.
  * They are then styled with CSS according to current VS Code theme settings.
- * All SVGs source: [https://fonts.google.com/icons]
- * @param {*} networkContainer HTMLElement reference to the Network container.
+ * All SVGs source: [https://fonts.google.com/icons].
+ * @param {*} networkContainer HTMLElement reference to the Network container. 
  */
 function createNavigationUi(networkContainer) {
     // Up arrow
@@ -126,6 +239,50 @@ function createNavigationUi(networkContainer) {
     // Zoom out
     networkContainer.querySelector('.vis-network .vis-navigation .vis-button.vis-zoomOut')
         .innerHTML += '<svg class="nav-icon nav-zoom" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg>';
+}
+
+/**
+ * Toggles dropdown content and icon.
+ * @param {*} state Show or hide.
+ */
+function toggleDropdownContent(state) {
+    // Toggle dropdown content
+    if (state === 'show') {
+        document.querySelector('#dropdown-toggle-content').classList.add('shown');
+        document.querySelector('#drop-down-icon').classList.remove('shown');
+        document.querySelector('#drop-up-icon').classList.add('shown');
+    } else if (state === 'hide') {
+        document.querySelector('#dropdown-toggle-content').classList.remove('shown');
+        document.querySelector('#drop-down-icon').classList.add('shown');
+        document.querySelector('#drop-up-icon').classList.remove('shown');
+    } else {
+        document.querySelector('#dropdown-toggle-content').classList.toggle('shown');
+        document.querySelector('#drop-down-icon').classList.toggle('shown');
+        document.querySelector('#drop-up-icon').classList.toggle('shown');
+    }
+}
+
+/**
+ * Resets sections of the UI.
+ * @param {*} resetToggles Mark toggles back to checked.
+ * @param {*} hideDropdowns Hide dropdown containers.
+ * @param {*} hideNodeDetails Hide node detail containers.
+ */
+function resetUI(resetToggles, hideDropdowns, hideNodeDetails) {
+    // Reset toggle checked states
+    if (resetToggles === true) {
+        document.querySelectorAll('.toggle-input').forEach(function(element) {
+            element.checked = true;
+        });
+    }
+    // Hide dropdown containers
+    if (hideDropdowns === true) {
+        toggleDropdownContent('hide');
+    }
+    // Hide node detail containers
+    if (hideNodeDetails === true) {
+        document.querySelectorAll('.details-container').forEach((container) => container.style.display = 'none');
+    }
 }
 
 /**
@@ -171,4 +328,4 @@ function fillCanvasBackgroundWithColor(canvas, color) {
   
     // Restore the original context state from `context.save()`
     // context.restore();
-  }
+}

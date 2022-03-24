@@ -6,9 +6,9 @@ import { join } from 'path';
  * @param array Input array - must have a property 'name'.
  * @returns LookupObject.
  */
-export function getLookupFromArray<T extends { name: string }>(array: T[]): LookupObject<T> | undefined {
+export function getLookupFromArray<T extends { name: string }>(array: T[]): LookupObject<T> {
     if (array == null || array.length === 0) {
-        return undefined;
+        return {} as LookupObject<T>;
     } else {
         return array.reduce((map, obj) => {
             map[obj.name] = obj;
@@ -47,7 +47,7 @@ export function saveDataUrlAsImage(dataUrl: string, workspaceRootPath: string): 
     if (matches == null || matches.length < 2) {
         throw new Error('Cannot obtain file extension from data URL metadata');
     }
-    const extension = matches[1];
+    const extension = `.${matches[1]}`;
 
     // Get a buffer from the data  
     const buffer = Buffer.from(splitDataUrl[1], 'base64');
@@ -59,10 +59,16 @@ export function saveDataUrlAsImage(dataUrl: string, workspaceRootPath: string): 
         fs.mkdirSync(outputFolder);
     }
 
-    // TODO: Get current timestamp so files are not overwritten
+    // Check for same-name files and append a number if they already exist
+    const fileName = 'project-diagram';
+    let fullFilePath = join(outputFolder, `${fileName}${extension}`);
+    let num = 0;
+    while (fs.existsSync(fullFilePath)) {
+        fullFilePath = join(outputFolder, `${fileName}_${++num}${extension}`);
+    }
 
     // Write the data to file
-    fs.writeFileSync(join(outputFolder, 'project-diagram.' + extension), buffer);
+    fs.writeFileSync(fullFilePath, buffer);
 }
 
 export type LookupObject<T> = {
