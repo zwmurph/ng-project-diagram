@@ -130,6 +130,9 @@
     margin: 5px;
     fill: var(--vscode-button-background);
 }
+.vis-navigation .vis-button .nav-icon.high-contrast {
+    fill: var(--vscode-focusBorder);
+}
 
 /* Nav buttons: Change icon hover colour */
 .vis-navigation .vis-button:hover {
@@ -137,6 +140,9 @@
 }
 .vis-navigation .vis-button:hover .nav-icon {
     fill: var(--vscode-button-hoverBackground);
+}
+.vis-navigation .vis-button:hover .nav-icon.high-contrast {
+    fill: var(--vscode-focusBorder);
 }
 
 /* Nav buttons: Change icon active colour */

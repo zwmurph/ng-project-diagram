@@ -127,7 +127,11 @@ export class DiagramPanel {
      */
     public showDiagramOnPanel(diagramMetadata: ProjectDiagramMetadata, resetUI?: boolean): void {
         // Send serialized JSON to the webview
-        this._panel.webview.postMessage({ command: 'DISPLAY-DIAGRAM', data: diagramMetadata });
+        this._panel.webview.postMessage({
+            command: 'DISPLAY-DIAGRAM',
+            data: diagramMetadata,
+            highContrastTheme: vscode.window.activeColorTheme.kind === 3
+        });
         if (resetUI === true) {
             this._panel.webview.postMessage({ command: 'RESET-UI' });
         }
