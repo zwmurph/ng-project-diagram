@@ -299,6 +299,10 @@ export class DiagramPanel {
                                 </label>
                             </div>
                         </div>
+                        <div class="transparency-toggle">
+                            <input type="checkbox" id="canvas-background-toggle" name="canvas-background" checked />
+                            <label for="canvas-background-toggle">Transparent Background?</label>
+                        </div>
                     </div>
                     <div id="module-details-container" class="details-container">
                         <div class="row">

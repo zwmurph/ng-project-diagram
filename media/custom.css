@@ -65,6 +65,12 @@
     border-bottom: 0;
 }
 
+/* Transparency toggle */
+.toolbar .transparency-toggle {
+    display: inline-flex;
+    margin-left: 0.5rem;
+}
+
 
 /* --- Details container styles --- */
 .details-container {
