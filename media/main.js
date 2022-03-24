@@ -65,9 +65,6 @@
  * @param {*} vscode VS Code API reference.
  */
 function displayDiagram(networkMetadata, container, vscode) {
-    console.log('data', networkMetadata.data);
-    console.log('options', networkMetadata.options);
-
     const network = new vis.Network(container, networkMetadata.data, networkMetadata.options);
 
     // Update the UI with new icons
