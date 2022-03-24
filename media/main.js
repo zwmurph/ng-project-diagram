@@ -184,8 +184,6 @@ function sendNetworkDataUrl(vscode, networkContainer) {
 
     // Check if the image should be saved with a transparent background or not
     if (!transparencyToggleChecked) {
-        console.log('not checked - fill background');
-
         // Get the canvas context from the element
         canvasContext = canvasElement.getContext('2d');
 
@@ -204,7 +202,6 @@ function sendNetworkDataUrl(vscode, networkContainer) {
     const dataUrl = canvasElement.toDataURL();
 
     if (!transparencyToggleChecked) {
-        console.log('restore');
         // Restore the canvas
         canvasContext.restore();
     }
