@@ -28,7 +28,7 @@ export function activate(context: vscode.ExtensionContext) {
 				projectElements.generateDiagramMetadata();
 				
 				// Display the diagram on the webview panel
-				DiagramPanel.activePanel?.showDiagramOnPanel(projectElements.diagramMetadata);
+				DiagramPanel.activePanel?.showDiagramOnPanel(projectElements.diagramMetadata, true);
 			} else {
 				vscode.window.showErrorMessage('tsconfig.json cannot be found');
 			}

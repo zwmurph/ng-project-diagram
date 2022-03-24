@@ -443,6 +443,7 @@ export class ProjectElements {
         };
        
         // Options for node groups, individual node options will override these
+        // SVGs source: [https://fontawesome.com/icons].
         const allGroupOptions: Options = {
             groups: {
                 module: {

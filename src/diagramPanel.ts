@@ -38,12 +38,12 @@ export class DiagramPanel {
         // Event handler for changes to the content view state - happens when a webview's visibility changes, or when a webview is moved into a new editor column
         // this._panel.onDidChangeViewState(() => {
         //     if (this._panel.visible) {
-                
+
         //     }
         // }, null, this._disposables);
 
         // Event handler for messages received from the webview
-        this._panel.webview.onDidReceiveMessage((message) => {
+        this._panel.webview.onDidReceiveMessage((message: PanelPOSTMessage) => {
             if (message.command === 'NETWORK-DATA-URL') {
                 try {
                     saveDataUrlAsImage(message.data, this._workspaceRootPath);
@@ -75,7 +75,7 @@ export class DiagramPanel {
                 const groupsToRemove: string[] = groupStates
                     .filter((groupState) => groupState.state === false)
                     .map((groupState) => groupState.group);
-                
+
                 // Filter the list and display the altered nodes
                 const projectElements: ProjectElements = ProjectElements.getInstance();
                 this.showDiagramOnPanel(projectElements.filterNetworkNodes(groupsToRemove));
@@ -108,10 +108,14 @@ export class DiagramPanel {
     /**
      * Shows a diagram on the webview panel.
      * @param diagramMetadata Metadata of the network.
+     * @param resetUI Optional parameter to trigger a UI reset on the webview.
      */
-    public showDiagramOnPanel(diagramMetadata: ProjectDiagramMetadata): void {
+    public showDiagramOnPanel(diagramMetadata: ProjectDiagramMetadata, resetUI?: boolean): void {
         // Send serialized JSON to the webview
         this._panel.webview.postMessage({ command: 'DISPLAY-DIAGRAM', data: diagramMetadata });
+        if (resetUI === true) {
+            this._panel.webview.postMessage({ command: 'RESET-UI' });
+        }
     }
 
     /**
@@ -147,7 +151,7 @@ export class DiagramPanel {
         // Get the group the node belongs to to know which lookup to use
         const projectElements = ProjectElements.getInstance();
         const nodeGroup = projectElements.networkNodesLookup[nodeId]?.group;
-        
+
         // Get the resulting file path
         let filePath: string | undefined = undefined;
         if (nodeGroup != null) {
@@ -223,6 +227,7 @@ export class DiagramPanel {
 
     /**
      * Generates HTML content for the Webview to render.
+     * All SVGs source: [https://fonts.google.com/icons].
      * @returns HTML String.
      */
     private getWebviewContent(): string {
@@ -368,3 +373,8 @@ export class DiagramPanel {
         `;
     }
 }
+
+type PanelPOSTMessage = {
+    command: string;
+    data?: any;
+};

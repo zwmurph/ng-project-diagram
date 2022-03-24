@@ -11,34 +11,36 @@
             displayDiagram(message.data, container, vscode);
         } else if (message.command === 'DISPLAY-METADATA') {
             displayNodeMetaData(message.data);
+        } else if (message.command === 'RESET-UI') {
+            resetUI(true, true, true);
         }
     });
 
     // Event listener for download button
     document.getElementById('download-btn').addEventListener('click', () => {
-        toggleDropdownContent('hide');
+        resetUI(false, true, false);
         sendNetworkDataUrl(vscode, container);
     });
 
     // Event listener for reset layout button
     document.getElementById('reset-btn').addEventListener('click', () => {
+        resetUI(true, true, true);
         // Send a message to the extension
         vscode.postMessage({ command: 'RESET-LAYOUT' });
-        resetToggles();
-        toggleDropdownContent('hide');
     });
 
     // Event listener for sync button
     document.getElementById('sync-btn').addEventListener('click', () => {
+        resetUI(true, true, true);
         // Send a message to the extension
         vscode.postMessage({ command: 'SYNC-FILE-CHANGES' });
-        resetToggles();
-        toggleDropdownContent('hide');
     });
 
     // Loop toggles and add a listener
     document.querySelectorAll('.toggle-input').forEach(function(input) {
         input.addEventListener('change', function() {
+            resetUI(false, false, true);
+
             // Get the states of all toggles
             let toggleStates = [];
             document.querySelectorAll('.toggle-input').forEach(function(item) {
@@ -47,7 +49,6 @@
 
             // Send a message to the extension
             vscode.postMessage({ command: 'FILTER-NODE-GROUPS', data: toggleStates });
-            hideDetailContainers();
         });
     });
 
@@ -79,8 +80,13 @@ function displayDiagram(networkMetadata, container, vscode) {
         network.setOptions({ layout: { hierarchical: false } });
     });
 
+    // Event listener for single click
+    network.on('click', () => {
+        resetUI(false, true, false);
+    });
+
     // Event listener for double click
-    network.on('doubleClick', ({ nodes, edges, event, pointer }) => {
+    network.on('doubleClick', ({ nodes }) => {
         if (nodes != null && nodes.length > 0) {
             vscode.postMessage({
                 command: 'NODE-DOUBLE-CLICKED',
@@ -90,7 +96,7 @@ function displayDiagram(networkMetadata, container, vscode) {
     });
 
     // Event listener for node selection
-    network.on('selectNode', ({ nodes, edges, event, pointer }) => {
+    network.on('selectNode', ({ nodes }) => {
         if (nodes != null && nodes.length > 0) {
             vscode.postMessage({
                 command: 'NODE-SELECTED',
@@ -100,9 +106,22 @@ function displayDiagram(networkMetadata, container, vscode) {
     });
 
     // Event listener for node deselection
-    network.on('deselectNode', ({ nodes, edges, event, pointer, previousSelection }) => {
+    network.on('deselectNode', () => {
         // Hide all detail containers on node deselect
-        hideDetailContainers();
+        resetUI(false, false, true);
+    });
+
+    // Event listener for canvas drag
+    network.on('dragStart', () => {
+        // Hide all detail containers on node deselect
+        resetUI(false, true, false);
+    });
+
+    // Event listeners for navigation buttons
+    document.querySelectorAll('.vis-navigation .vis-button').forEach(function(button) {
+        button.addEventListener('mousedown', function() {
+            resetUI(false, true, false);
+        });
     });
 }
 
@@ -158,7 +177,7 @@ function sendNetworkDataUrl(vscode, networkContainer) {
 /**
  * Function that inserts SVG elements within existing controls of Vis Network.
  * They are then styled with CSS according to current VS Code theme settings.
- * All SVGs source: [https://fonts.google.com/icons]
+ * All SVGs source: [https://fonts.google.com/icons].
  * @param {*} networkContainer HTMLElement reference to the Network container. 
  */
 function createNavigationUi(networkContainer) {
@@ -192,23 +211,6 @@ function createNavigationUi(networkContainer) {
 }
 
 /**
- * Hides detail containers from view.
- */
-function hideDetailContainers() {
-    // Change styling to none on all containers
-    document.querySelectorAll('.details-container').forEach((container) => container.style.display = 'none');
-}
-
-/**
- * Resets all toggles on toolbar.
- */
-function resetToggles() {
-    document.querySelectorAll('.toggle-input').forEach(function(element) {
-        element.checked = true;
-    });
-}
-
-/**
  * Toggles dropdown content and icon.
  * @param {*} state Show or hide.
  */
@@ -226,5 +228,28 @@ function toggleDropdownContent(state) {
         document.querySelector('#dropdown-toggle-content').classList.toggle('shown');
         document.querySelector('#drop-down-icon').classList.toggle('shown');
         document.querySelector('#drop-up-icon').classList.toggle('shown');
+    }
+}
+
+/**
+ * Resets sections of the UI.
+ * @param {*} resetToggles Mark toggles back to checked.
+ * @param {*} hideDropdowns Hide dropdown containers.
+ * @param {*} hideNodeDetails Hide node detail containers.
+ */
+function resetUI(resetToggles, hideDropdowns, hideNodeDetails) {
+    // Reset toggle checked states
+    if (resetToggles === true) {
+        document.querySelectorAll('.toggle-input').forEach(function(element) {
+            element.checked = true;
+        });
+    }
+    // Hide dropdown containers
+    if (hideDropdowns === true) {
+        toggleDropdownContent('hide');
+    }
+    // Hide node detail containers
+    if (hideNodeDetails === true) {
+        document.querySelectorAll('.details-container').forEach((container) => container.style.display = 'none');
     }
 }
