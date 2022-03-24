@@ -1,6 +1,7 @@
 /* --- Toolbar styles --- */
 .toolbar {
     display: flex;
+    align-items: center;
     margin-top: 1rem;
     padding: 0 0.25rem 0.25rem 0.25rem;
     border-bottom: 1px solid var(--vscode-focusBorder);
@@ -104,7 +105,13 @@
 /* --- Vis JS Network styles --- */
 #project-network {
     height: calc(100vh - 4.25rem);
+    background-color: unset;
 }
+#project-network.fill-background {
+    background-color: white;
+    border: 3px solid var(--vscode-focusBorder);
+}
+
 
 /* Nav buttons: Remove existing background images */
 .vis-navigation .vis-button.vis-up,

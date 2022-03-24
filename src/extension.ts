@@ -25,7 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
 				projectElements.resolveAllWorkspaceSymbols();
 
 				// Get project diagram data
-				projectElements.generateDiagramMetadata();
+				projectElements.generateDiagramMetadata(DiagramPanel.activePanel?.canvasIsTransparent);
 				
 				// Display the diagram on the webview panel
 				DiagramPanel.activePanel?.showDiagramOnPanel(projectElements.diagramMetadata, true);

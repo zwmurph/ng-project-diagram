@@ -2,17 +2,20 @@
 (function() {
     const vscode = acquireVsCodeApi();
     const container = document.getElementById('project-network');
+    let network;
 
     // Event listener for messages sent from the extension to the webview
     window.addEventListener('message', (event) => {
         // Execute functions based on command sent in message
         const message = event.data;
         if (message.command === 'DISPLAY-DIAGRAM') {
-            displayDiagram(message.data, container, vscode);
+            network = displayDiagram(message.data, container, vscode);
         } else if (message.command === 'DISPLAY-METADATA') {
             displayNodeMetaData(message.data);
         } else if (message.command === 'RESET-UI') {
             resetUI(true, true, true);
+        } else if (message.command === 'SET-LABEL-OPTIONS') {
+            network.setOptions({ nodes: { font: { color: message.data }}});
         }
     });
 
@@ -58,9 +61,14 @@
     });
 
     // Event listener for transparency toggle
-    // document.getElementById('canvas-background-toggle').addEventListener('change', function() {
-    //     handleTransparencyToggleChange(this.checked, container);
-    // });
+    document.getElementById('canvas-background-toggle').addEventListener('change', function() {
+        resetUI(false, true, false);
+        // Send a message to the extension
+        vscode.postMessage({ command: 'TRANSPARENCY-TOGGLED', data: this.checked });
+
+        // Change the canvas background
+        container.classList.toggle('fill-background');
+    });
 }());
 
 /**
@@ -68,6 +76,7 @@
  * @param {*} networkMetadata Nodes and Edges to display along with Options for the Network.
  * @param {*} container HTMLElement to act as a container for the Network.
  * @param {*} vscode VS Code API reference.
+ * @returns Instance of created network.
  */
 function displayDiagram(networkMetadata, container, vscode) {
     const network = new vis.Network(container, networkMetadata.data, networkMetadata.options);
@@ -125,6 +134,8 @@ function displayDiagram(networkMetadata, container, vscode) {
             resetUI(false, true, false);
         });
     });
+
+    return network;
 }
 
 /**
@@ -283,49 +294,4 @@ function resetUI(resetToggles, hideDropdowns, hideNodeDetails) {
     if (hideNodeDetails === true) {
         document.querySelectorAll('.details-container').forEach((container) => container.style.display = 'none');
     }
-}
-
-/**
- * Handles logic for when the canvas transparency toggle is clicked.
- * @param {*} checked Current state of the checkbox - checked or not.
- * @param {*} networkContainer HTMLElement reference to the Network container.
- */
-function handleTransparencyToggleChange(checked, networkContainer) {
-    if (checked) {
-        console.log('make transparent');
-    } else {
-        console.log('fill with colour');
-
-        // Get the canvas element
-        const canvasElement = networkContainer.getElementsByTagName('canvas')[0];
-        fillCanvasBackgroundWithColor(canvasElement, 'aquamarine');
-    }
-}
-
-function fillCanvasBackgroundWithColor(canvas, color) {
-    // Get the 2D drawing context from the provided canvas.
-    const context = canvas.getContext('2d');
-  
-    // We're going to modify the context state, so it's
-    // good practice to save the current state first.
-    context.save();
-  
-    // Normally when you draw on a canvas, the new drawing
-    // covers up any previous drawing it overlaps. This is
-    // because the default `globalCompositeOperation` is
-    // 'source-over'. By changing this to 'destination-over',
-    // our new drawing goes behind the existing drawing. This
-    // is desirable so we can fill the background, while leaving
-    // the chart and any other existing drawing intact.
-    // Learn more about `globalCompositeOperation` here:
-    // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/globalCompositeOperation
-    context.globalCompositeOperation = 'destination-over';
-  
-    // Fill in the background. We do this by drawing a rectangle
-    // filling the entire canvas, using the provided color.
-    context.fillStyle = color;
-    context.fillRect(0, 0, canvas.width, canvas.height);
-  
-    // Restore the original context state from `context.save()`
-    // context.restore();
 }
