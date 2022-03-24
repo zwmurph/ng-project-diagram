@@ -93,8 +93,9 @@ export class ProjectElements {
 
     /**
      * Generates the project diagram network data and options which are used by Vis.js to create the diagram.
+     * @param hasTransparentBackground State used to determine font colour of labels.
      */
-    public generateDiagramMetadata(): void {
+    public generateDiagramMetadata(hasTransparentBackground: boolean = true): void {
         // The diagram created with Vis.js uses network terminology. Create containers for the network nodes and edges
         const networkNodes: Node[] = [];
         const networkEdges: Edge[] = [];
@@ -195,16 +196,41 @@ export class ProjectElements {
         // Set network data for the project
         this._projectDiagramMetadata = {
             data: { nodes: levelAdjustedNodes, edges: networkEdges },
-            options: this.getNetworkOptions(),
+            options: this.getNetworkOptions(hasTransparentBackground),
         } as ProjectDiagramMetadata;
     }
 
     /**
      * Updates network options in project diagram metadata without changing the data itself.
+     * @param hasTransparentBackground State used to determine font colour of labels.
      */
-    public updateNetworkOptions(): void {
+    public updateNetworkOptions(hasTransparentBackground: boolean): void {
         // Set network data for the project
-        this._projectDiagramMetadata.options = this.getNetworkOptions();
+        this._projectDiagramMetadata.options = this.getNetworkOptions(hasTransparentBackground);
+    }
+
+    /**
+     * Gets a suitable font colour for network node labels based on transparency and editor themes.
+     * @param hasTransparentBackground State used to determine font colour of labels.
+     * @returns Hexadecimal colour code.
+     */
+    public resolveNetworkNodeLabelFontColour(hasTransparentBackground: boolean): string {
+        // Default: If the background is solid (white) the font colour should contrast that (black)
+        let fontColour = '#000000';
+
+        // If there is a transparent background the font colour should contrast the editor theme background
+        if (hasTransparentBackground === true) {
+            // Get active editor theme - 1: light, 2: dark, 3: high contrast
+            const editorThemeId = vscode.window.activeColorTheme.kind;
+            // Set a map for contrasting text colours to theme kinds
+            const editorThemeIdFontColourMap = {
+                1: '#000000',
+                2: '#FFFFFF',
+                3: '#FFFFFF',
+            };
+            fontColour = editorThemeIdFontColourMap[editorThemeId];
+        }
+        return fontColour;
     }
 
     /**
@@ -394,24 +420,16 @@ export class ProjectElements {
 
     /**
      * Get network options. Includes general and node group options.
+     * @param hasTransparentBackground State used to determine font colour of labels.
      * @returns Options object.
      */
-    private getNetworkOptions(): Options {
-        // Get active editor theme - 1: light, 2: dark, 3: high contrast
-        const editorThemeId = vscode.window.activeColorTheme.kind;
-        // Set a map for contrasting text colours to theme kinds
-        const editorThemeIdFontColourMap = {
-            1: '#000000',
-            2: '#FFFFFF',
-            3: '#FFFFFF',
-        };
-
+    private getNetworkOptions(hasTransparentBackground: boolean): Options {
         // Set general network options
         const generalOptions: Options = {
             nodes: { 
                 borderWidth: 2,
                 font: {
-                    color: editorThemeIdFontColourMap[editorThemeId],
+                    color: this.resolveNetworkNodeLabelFontColour(hasTransparentBackground),
                 },
                 size: 15,
             },

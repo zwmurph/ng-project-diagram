@@ -1,3 +1,4 @@
+import { Font } from 'vis-network';
 import * as vscode from 'vscode';
 import { ProjectDiagramMetadata, ProjectElements } from './projectElements';
 import { getToken, saveDataUrlAsImage } from './utils';
@@ -12,11 +13,17 @@ export class DiagramPanel {
     private _disposables: vscode.Disposable[] = [];
     private _extensionUri: vscode.Uri;
     private _workspaceRootPath: string;
+    
+    private _transparentCanvas: boolean;
+    public get canvasIsTransparent(): boolean {
+        return this._transparentCanvas;
+    }
 
     private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, workspaceRootPath: string) {
         this._panel = panel;
         this._extensionUri = extensionUri;
         this._workspaceRootPath = workspaceRootPath;
+        this._transparentCanvas = true;
 
         // Set the webview's initial content
         this._panel.webview.html = this.getWebviewContent();
@@ -52,7 +59,7 @@ export class DiagramPanel {
             } else if (message.command === 'RESET-LAYOUT') {
                 // Update the network options in case UI theme has changed
                 const projectElements = ProjectElements.getInstance();
-                projectElements.updateNetworkOptions();
+                projectElements.updateNetworkOptions(this._transparentCanvas);
                 // Get the last diagram metadata generated and send to panel to display
                 this.showDiagramOnPanel(projectElements.diagramMetadata);
             } else if (message.command === 'SYNC-FILE-CHANGES') {
@@ -60,7 +67,7 @@ export class DiagramPanel {
                 const projectElements: ProjectElements = ProjectElements.getInstance();
                 projectElements.resolveAllWorkspaceSymbols();
                 // Create new diagram metadata and send to panel to display
-                projectElements.generateDiagramMetadata();
+                projectElements.generateDiagramMetadata(this._transparentCanvas);
                 this.showDiagramOnPanel(projectElements.diagramMetadata);
             } else if (message.command === 'FILTER-NODE-GROUPS') {
                 // Get group states sent from webview and filter to find groups to remove
@@ -69,9 +76,24 @@ export class DiagramPanel {
                     .filter((groupState) => groupState.state === false)
                     .map((groupState) => groupState.group);
 
-                // Filter the list and display the altered nodes
+                // Filter the list
                 const projectElements: ProjectElements = ProjectElements.getInstance();
-                this.showDiagramOnPanel(projectElements.filterNetworkNodes(groupsToRemove));
+                const projectMetadata = projectElements.filterNetworkNodes(groupsToRemove);
+                // Make sure the node font colour is appropriate
+                const font = projectMetadata.options.nodes?.font as Font;
+                font.color = projectElements.resolveNetworkNodeLabelFontColour(this._transparentCanvas);
+
+                this.showDiagramOnPanel(projectMetadata);
+            } else if (message.command === 'TRANSPARENCY-TOGGLED') {
+                // Set new state
+                this._transparentCanvas = message.data;
+
+                // Update network options
+                const projectElements: ProjectElements = ProjectElements.getInstance();
+                const newFontColour = projectElements.resolveNetworkNodeLabelFontColour(this._transparentCanvas);
+                
+                // Send new options back to webview
+                this._panel.webview.postMessage({ command: 'SET-LABEL-OPTIONS', data: newFontColour });
             }
         });
     }
@@ -299,10 +321,10 @@ export class DiagramPanel {
                                 </label>
                             </div>
                         </div>
-                        <div class="transparency-toggle">
+                        <label class="transparency-toggle">
                             <input type="checkbox" id="canvas-background-toggle" name="canvas-background" checked />
-                            <label for="canvas-background-toggle">Transparent Background?</label>
-                        </div>
+                            <span>Transparent Background?</span>
+                        </label>
                     </div>
                     <div id="module-details-container" class="details-container">
                         <div class="row">
