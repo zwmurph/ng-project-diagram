@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { join } from 'path';
-import { ProjectDiagramMetadata, ProjectElements } from './projectElements';
+import { ProjectElements } from './projectElements';
 import { DiagramPanel } from './diagramPanel';
 
 // Event handler for extension activation

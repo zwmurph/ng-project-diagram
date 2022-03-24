@@ -35,13 +35,6 @@ export class DiagramPanel {
 
         }, null, this._disposables);
 
-        // Event handler for changes to the content view state - happens when a webview's visibility changes, or when a webview is moved into a new editor column
-        // this._panel.onDidChangeViewState(() => {
-        //     if (this._panel.visible) {
-
-        //     }
-        // }, null, this._disposables);
-
         // Event handler for messages received from the webview
         this._panel.webview.onDidReceiveMessage((message: PanelPOSTMessage) => {
             if (message.command === 'NETWORK-DATA-URL') {

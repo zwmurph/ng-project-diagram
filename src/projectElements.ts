@@ -89,10 +89,6 @@ export class ProjectElements {
         this._projectModulesLookup = getLookupFromArray(this.projectModules);
         this._projectComponentsLookup = getLookupFromArray(this.projectComponents);
         this._projectInjectablesLookup = getLookupFromArray(this.projectInjectables);
-
-        // TODO: Directives and pipes at a later time, if needed
-        // this.workspaceSymbols.getAllDirectives();
-        // this.workspaceSymbols.getAllPipes();
     }
 
     /**
