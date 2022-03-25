@@ -1,8 +1,10 @@
 # NG Project Diagram
 
-> Visualises the structure of an Angular project from source code
+> VS Code Extension that visualises the structure of an Angular project from its source code
 
-## Launching the extension
+[Install from Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=zwmurph.ng-project-diagram)
+
+## Launching the Extension
 
 - *(First-time for each project)* Make sure your project has been compiled by Angular (`'ng serve'` / `'ng build'`).
 - `'Show NG Project Diagram'` in the Command Palette (<kbd>Ctrl+Shift+P</kbd>), OR
