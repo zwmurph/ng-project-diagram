@@ -3,6 +3,12 @@
   "displayName": "NG Project Diagram",
   "description": "VS Code extension that visualises the structure of an Angular project",
   "version": "0.1.0",
+  "publisher": "zwmurph",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zwmurph/ng-project-diagram"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.63.2"
   },
@@ -66,8 +72,5 @@
     "ngast": "^0.6.2",
     "typescript": "^4.0.8",
     "vis-network": "^9.1.0"
-  },
-  "repository": {
-    "url": "https://github.com/zwmurph/ng-project-diagram"
   }
 }
