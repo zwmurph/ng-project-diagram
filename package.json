@@ -2,7 +2,7 @@
   "name": "ng-project-diagram",
   "displayName": "NG Project Diagram",
   "description": "VS Code extension that visualises the structure of an Angular project",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.63.2"
   },
