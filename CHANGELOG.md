@@ -1,9 +1,9 @@
 # Change Log
 
-All notable changes to the "ng-project-diagram" extension will be documented in this file.
+#### 0.1.1
+- Inclusion of asynchronous functionality to await methods that may take time to complete.
+- Inclusion of load time calculator.
+- Update to README with links to used libraries.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+#### 0.1.0
+- Initial release.

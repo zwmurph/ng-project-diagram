@@ -9,7 +9,13 @@
         // Execute functions based on command sent in message
         const message = event.data;
         if (message.command === 'DISPLAY-DIAGRAM') {
-            network = displayDiagram(message.data, container, vscode, message.highContrastTheme);
+            network = displayDiagram(
+                message.data,
+                container,
+                vscode,
+                message.highContrastTheme,
+                message.executionStartTime
+            );
         } else if (message.command === 'DISPLAY-METADATA') {
             displayNodeMetaData(message.data);
         } else if (message.command === 'RESET-UI') {
@@ -77,9 +83,10 @@
  * @param {*} container HTMLElement to act as a container for the Network.
  * @param {*} vscode VS Code API reference.
  * @param {*} highContrastTheme State of whether the editor theme is high contrast or not.
+ * @param {*} executionStartTime Used if calculating load time of network.
  * @returns Instance of created network.
  */
-function displayDiagram(networkMetadata, container, vscode, highContrastTheme) {
+function displayDiagram(networkMetadata, container, vscode, highContrastTheme, executionStartTime) {
     const network = new vis.Network(container, networkMetadata.data, networkMetadata.options);
 
     // Update the UI with new icons
@@ -135,6 +142,11 @@ function displayDiagram(networkMetadata, container, vscode, highContrastTheme) {
             resetUI(false, true, false);
         });
     });
+
+    // Calculate network load time now everything is setup
+    if (executionStartTime != null) {
+        vscode.postMessage({ command: 'LOAD-TIME', data: Date.now() - executionStartTime });
+    }
 
     return network;
 }

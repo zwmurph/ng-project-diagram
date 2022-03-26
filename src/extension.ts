@@ -8,6 +8,9 @@ import { DiagramPanel } from './diagramPanel';
 export function activate(context: vscode.ExtensionContext) {
 	// Define the command and add to the extension context
 	context.subscriptions.push(vscode.commands.registerCommand('ng-project-diagram.diagram', () => {
+		// Capture time of extension start
+		const startTime = Date.now();
+
 		// Get workspace root and check presence
 		const wsRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
 		if (wsRoot) {
@@ -21,14 +24,17 @@ export function activate(context: vscode.ExtensionContext) {
 				const projectElements = ProjectElements.getInstance();
 				projectElements.setTsconfigPath(tsconfigPath);
 
-				// Resolve all workspace symbols in the project
-				projectElements.resolveAllWorkspaceSymbols();
-
-				// Get project diagram data
-				projectElements.generateDiagramMetadata(DiagramPanel.activePanel?.canvasIsTransparent);
-				
-				// Display the diagram on the webview panel
-				DiagramPanel.activePanel?.showDiagramOnPanel(projectElements.diagramMetadata, true);
+				// Wait for all workspace symbols to be resolved in the project
+				projectElements.resolveAllWorkspaceSymbols().then(() => {
+					// Wait for project diagram data to be generated
+					return projectElements.generateDiagramMetadata(DiagramPanel.activePanel?.canvasIsTransparent);
+				}).then(() => {
+					// Display the diagram on the webview panel
+					DiagramPanel.activePanel?.showDiagramOnPanel(projectElements.diagramMetadata, true, startTime);
+				}).catch((error) => {
+					console.error(error);
+					vscode.window.showErrorMessage('An error occurred while generating the network.');
+				});
 			} else {
 				vscode.window.showErrorMessage('tsconfig.json cannot be found');
 			}
