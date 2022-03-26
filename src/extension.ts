@@ -21,14 +21,17 @@ export function activate(context: vscode.ExtensionContext) {
 				const projectElements = ProjectElements.getInstance();
 				projectElements.setTsconfigPath(tsconfigPath);
 
-				// Resolve all workspace symbols in the project
-				projectElements.resolveAllWorkspaceSymbols();
-
-				// Get project diagram data
-				projectElements.generateDiagramMetadata(DiagramPanel.activePanel?.canvasIsTransparent);
-				
-				// Display the diagram on the webview panel
-				DiagramPanel.activePanel?.showDiagramOnPanel(projectElements.diagramMetadata, true);
+				// Wait for all workspace symbols to be resolved in the project
+				projectElements.resolveAllWorkspaceSymbols().then(() => {
+					// Wait for project diagram data to be generated
+					return projectElements.generateDiagramMetadata(DiagramPanel.activePanel?.canvasIsTransparent);
+				}).then(() => {
+					// Display the diagram on the webview panel
+					DiagramPanel.activePanel?.showDiagramOnPanel(projectElements.diagramMetadata, true);
+				}).catch((error) => {
+					console.error(error);
+					vscode.window.showErrorMessage('An error occurred while generating the network.');
+				});
 			} else {
 				vscode.window.showErrorMessage('tsconfig.json cannot be found');
 			}

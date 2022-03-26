@@ -4,17 +4,21 @@ import { join } from 'path';
 /**
  * Converts an array of objects to a lookup of the same objects.
  * @param array Input array - must have a property 'name'.
- * @returns LookupObject.
+ * @returns Promise with LookupObject<T> once completed.
  */
-export function getLookupFromArray<T extends { name: string }>(array: T[]): LookupObject<T> {
-    if (array == null || array.length === 0) {
-        return {} as LookupObject<T>;
-    } else {
-        return array.reduce((map, obj) => {
-            map[obj.name] = obj;
-            return map;
-        }, {} as LookupObject<T>);
-    }
+export function getLookupFromArray<T extends { name: string }>(array: T[]): Promise<LookupObject<T>> {
+    return new Promise<LookupObject<T>>((resolve, reject) => {
+        if (array == null || array.length === 0) {
+            reject('Array null or zero length.');
+        } else {
+            resolve(
+                array.reduce((map, obj) => {
+                    map[obj.name] = obj;
+                    return map;
+                }, {} as LookupObject<T>)
+            );
+        }
+    });
 }
 
 /**

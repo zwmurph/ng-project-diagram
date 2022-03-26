@@ -76,128 +76,147 @@ export class ProjectElements {
     /**
      * Resolves all symbols within the project.
      * MUST be called before trying to access properties or methods that interact with project symbols or create network data.
+     * @returns Promise with result once all actions in chain are completed.
      */
-    public resolveAllWorkspaceSymbols(): void {
-        this.workspaceSymbols = new WorkspaceSymbols(this.tsconfigPath);
+    public resolveAllWorkspaceSymbols(): Promise<void> {
+        return new Promise<WorkspaceSymbols>((resolve) => {
+            resolve(new WorkspaceSymbols(this.tsconfigPath));
+        }).then((workspaceSymbols: WorkspaceSymbols) => {
+            this.workspaceSymbols = workspaceSymbols;
 
-        // Elements
-        this.resolveProjectModules();
-        this.resolveProjectComponents();
-        this.resolveProjectInjectables();
+            return Promise.all([
+                this.resolveProjectModules(),
+                this.resolveProjectComponents(),
+                this.resolveProjectInjectables(),  
+            ]);
+        }).then((symbols: [ProjectModule[], ProjectComponent[], ProjectInjectable[]]) => {
+            this.projectModules = symbols[0];
+            this.projectComponents = symbols[1];
+            this.projectInjectables = symbols[2];
 
-        // Element lookups
-        this._projectModulesLookup = getLookupFromArray(this.projectModules);
-        this._projectComponentsLookup = getLookupFromArray(this.projectComponents);
-        this._projectInjectablesLookup = getLookupFromArray(this.projectInjectables);
+            return Promise.all([
+                getLookupFromArray(this.projectModules),
+                getLookupFromArray(this.projectComponents),
+                getLookupFromArray(this.projectInjectables)
+            ]);
+        }).then((lookups: [LookupObject<ProjectModule>, LookupObject<ProjectComponent>, LookupObject<ProjectInjectable>]) => {
+            this._projectModulesLookup = lookups[0];
+            this._projectComponentsLookup = lookups[1];
+            this._projectInjectablesLookup = lookups[2];
+        });
     }
 
     /**
      * Generates the project diagram network data and options which are used by Vis.js to create the diagram.
      * @param hasTransparentBackground State used to determine font colour of labels.
+     * @returns Promise with result once all actions are completed.
      */
-    public generateDiagramMetadata(hasTransparentBackground: boolean = true): void {
-        // The diagram created with Vis.js uses network terminology. Create containers for the network nodes and edges
-        const networkNodes: Node[] = [];
-        const networkEdges: Edge[] = [];
+    public generateDiagramMetadata(hasTransparentBackground: boolean = true): Promise<void> {
+        return new Promise<void>((resolve) => {
+            // The diagram created with Vis.js uses network terminology. Create containers for the network nodes and edges
+            const networkNodes: Node[] = [];
+            const networkEdges: Edge[] = [];
 
-        // Create lookup for created nodes
-        this._networkNodesLookup = {};
-        this._networkNodeMetadataLookup = {};
-        
-        // Create nodes
-        this.projectModules.forEach((module) => {
-            const moduleGroup: string = module.internal === true ? 'module' : 'externalModule';
-            const moduleNode: Node = { id: module.name, label: module.name, group: moduleGroup };
-            networkNodes.push(moduleNode);
-            this._networkNodesLookup[module.name] = moduleNode;
-            this._networkNodeMetadataLookup[module.name] = this.generateModuleNodeMetadata(module);
-        });
-        this.projectComponents.forEach((component) => {
-            const componentNode: Node = { id: component.name, label: component.name, group: 'component' };
-            networkNodes.push(componentNode);
-            this._networkNodesLookup[component.name] = componentNode;
-            this._networkNodeMetadataLookup[component.name] = this.generateComponentNodeMetadata(component);
-        });
-        this.projectInjectables.forEach((injectable) => {
-            const injectableNode: Node = { id: injectable.name, label: injectable.name, group: 'injectable' };
-            networkNodes.push(injectableNode);
-            this._networkNodesLookup[injectable.name] = injectableNode;
-            this._networkNodeMetadataLookup[injectable.name] = this.generateInjectableNodeMetadata(injectable);
-        });
+            // Create lookup for created nodes
+            this._networkNodesLookup = {};
+            this._networkNodeMetadataLookup = {};
+            
+            // Create nodes
+            this.projectModules.forEach((module) => {
+                const moduleGroup: string = module.internal === true ? 'module' : 'externalModule';
+                const moduleNode: Node = { id: module.name, label: module.name, group: moduleGroup };
+                networkNodes.push(moduleNode);
+                this._networkNodesLookup[module.name] = moduleNode;
+                this._networkNodeMetadataLookup[module.name] = this.generateModuleNodeMetadata(module);
+            });
+            this.projectComponents.forEach((component) => {
+                const componentNode: Node = { id: component.name, label: component.name, group: 'component' };
+                networkNodes.push(componentNode);
+                this._networkNodesLookup[component.name] = componentNode;
+                this._networkNodeMetadataLookup[component.name] = this.generateComponentNodeMetadata(component);
+            });
+            this.projectInjectables.forEach((injectable) => {
+                const injectableNode: Node = { id: injectable.name, label: injectable.name, group: 'injectable' };
+                networkNodes.push(injectableNode);
+                this._networkNodesLookup[injectable.name] = injectableNode;
+                this._networkNodeMetadataLookup[injectable.name] = this.generateInjectableNodeMetadata(injectable);
+            });
 
-        // Create edges
-        this.projectModules.forEach((module: ProjectModule) => {
-            // Get the node representing the current iterating module
-            const fromNode = this._networkNodesLookup[module.name];
-            if (fromNode == null) {
-                return;
-            }
-
-            // Connect each module to other modules
-            module.imports.forEach((moduleImport: string) => {
-                // Find the imported module in the network node lookup
-                const toNode = this._networkNodesLookup[moduleImport];
-                if (toNode == null) {
+            // Create edges
+            this.projectModules.forEach((module: ProjectModule) => {
+                // Get the node representing the current iterating module
+                const fromNode = this._networkNodesLookup[module.name];
+                if (fromNode == null) {
                     return;
                 }
 
-                // Create an edge
-                networkEdges.push({
-                    id: `${fromNode.id}->${toNode.id}`,
-                    from: fromNode.id,
-                    to: toNode.id,
-                } as Edge);
+                // Connect each module to other modules
+                module.imports.forEach((moduleImport: string) => {
+                    // Find the imported module in the network node lookup
+                    const toNode = this._networkNodesLookup[moduleImport];
+                    if (toNode == null) {
+                        return;
+                    }
+
+                    // Create an edge
+                    networkEdges.push({
+                        id: `${fromNode.id}->${toNode.id}`,
+                        from: fromNode.id,
+                        to: toNode.id,
+                    } as Edge);
+                });
+
+                // Connect each module to its components
+                module.declarations.forEach((moduleDeclaration: string) => {
+                    // Find the declaration in the network node lookup
+                    const toNode = this._networkNodesLookup[moduleDeclaration];
+                    if (toNode == null) {
+                        return;
+                    }
+
+                    // Create an edge
+                    networkEdges.push({
+                        id: `${fromNode.id}->${toNode.id}`,
+                        from: fromNode.id,
+                        to: toNode.id,
+                    } as Edge);
+                });
             });
 
-            // Connect each module to its components
-            module.declarations.forEach((moduleDeclaration: string) => {
-                // Find the declaration in the network node lookup
-                const toNode = this._networkNodesLookup[moduleDeclaration];
-                if (toNode == null) {
+            // Connect each component to dependencies it injects
+            this.projectComponents.forEach((component: ProjectComponent) => {
+                // Get the node representing the current iterating component
+                const fromNode = this._networkNodesLookup[component.name];
+                if (fromNode == null) {
                     return;
                 }
 
-                // Create an edge
-                networkEdges.push({
-                    id: `${fromNode.id}->${toNode.id}`,
-                    from: fromNode.id,
-                    to: toNode.id,
-                } as Edge);
+                component.injectedDependencies.forEach((componentInjectable: string) => {
+                    // Check if the injected dependency exists in the network node lookup (only create edges to internal)
+                    const toNode = this._networkNodesLookup[componentInjectable];
+                    if (toNode == null) {
+                        return;
+                    }
+
+                    // Create edge
+                    networkEdges.push({
+                        id: `${fromNode.id}->${toNode.id}`,
+                        from: fromNode.id,
+                        to: toNode.id,
+                    } as Edge);
+                });
             });
+
+            // Adjust the node levels to provide a more top-down look
+            const levelAdjustedNodes = this.calculateNodeLevels(networkNodes, networkEdges);
+
+            // Set network data for the project
+            this._projectDiagramMetadata = {
+                data: { nodes: levelAdjustedNodes, edges: networkEdges },
+                options: this.getNetworkOptions(hasTransparentBackground),
+            } as ProjectDiagramMetadata;
+            resolve();
         });
-
-        // Connect each component to dependencies it injects
-        this.projectComponents.forEach((component: ProjectComponent) => {
-            // Get the node representing the current iterating component
-            const fromNode = this._networkNodesLookup[component.name];
-            if (fromNode == null) {
-                return;
-            }
-
-            component.injectedDependencies.forEach((componentInjectable: string) => {
-                // Check if the injected dependency exists in the network node lookup (only create edges to internal)
-                const toNode = this._networkNodesLookup[componentInjectable];
-                if (toNode == null) {
-                    return;
-                }
-
-                // Create edge
-                networkEdges.push({
-                    id: `${fromNode.id}->${toNode.id}`,
-                    from: fromNode.id,
-                    to: toNode.id,
-                } as Edge);
-            });
-        });
-
-        // Adjust the node levels to provide a more top-down look
-        const levelAdjustedNodes = this.calculateNodeLevels(networkNodes, networkEdges);
-
-        // Set network data for the project
-        this._projectDiagramMetadata = {
-            data: { nodes: levelAdjustedNodes, edges: networkEdges },
-            options: this.getNetworkOptions(hasTransparentBackground),
-        } as ProjectDiagramMetadata;
     }
 
     /**
@@ -252,170 +271,179 @@ export class ProjectElements {
 
     /**
      * Gets project modules.
+     * @returns Promise with ProjectModule array once all actions are completed.
      */
-    private resolveProjectModules(): void {
-        const modules: ProjectModule[] = [];
-        const addedModules: LookupObject<boolean> = {};
-        const importedModules: LookupObject<any> = {};
+    private resolveProjectModules(): Promise<ProjectModule[]> {
+        return new Promise<ProjectModule[]>((resolve) => {
+            const modules: ProjectModule[] = [];
+            const addedModules: LookupObject<boolean> = {};
+            const importedModules: LookupObject<any> = {};
 
-        // Handle main modules (internal)
-        this.workspaceSymbols.getAllModules().forEach((module) => {
-            // Create a basic object
-            const moduleObj: ProjectModule = {
-                name: module.name,
-                path: module.path,
-                imports: [],
-                declarations: [],
-                providers: [],
-                internal: true,
-            };
+            // Handle main modules (internal)
+            this.workspaceSymbols.getAllModules().forEach((module) => {
+                // Create a basic object
+                const moduleObj: ProjectModule = {
+                    name: module.name,
+                    path: module.path,
+                    imports: [],
+                    declarations: [],
+                    providers: [],
+                    internal: true,
+                };
 
-            // Get module imports
-            const foundImports = module.getImports();
-            if (foundImports != null && foundImports.length > 0) {
-                foundImports.forEach((imp) => {
-                    // Add name in module object property
-                    moduleObj.imports.push(imp.name);
+                // Get module imports
+                const foundImports = module.getImports();
+                if (foundImports != null && foundImports.length > 0) {
+                    foundImports.forEach((imp) => {
+                        // Add name in module object property
+                        moduleObj.imports.push(imp.name);
 
-                    // Add to lookup to process below
-                    if (importedModules[imp.name] == null) {
-                        importedModules[imp.name] = imp;
-                    }
-                });
-            }
-
-            // Get module declarations
-            const foundDeclarations = module.getDeclarations();
-            if (foundDeclarations != null && foundDeclarations.length > 0) {
-                moduleObj.declarations.push(...foundDeclarations.map((declaration) => declaration.name));
-            }
-
-            // Check the symbol has been analysed before accessing the analysis
-            if (module.isAnalysed === false) {
-                module.analyse();
-            }
-            
-            // Get the providers data, if present
-            const providersCopy: any = module.analysis?.providers;
-            if (providersCopy != null) {
-                if (providersCopy.elements != null && providersCopy.elements.length > 0) {
-                    providersCopy.elements.forEach((elem: any) => {
-                        if (elem.escapedText != null && elem.escapedText != '' && !moduleObj.providers.includes(elem.escapedText)) {
-                            moduleObj.providers.push(elem.escapedText);
+                        // Add to lookup to process below
+                        if (importedModules[imp.name] == null) {
+                            importedModules[imp.name] = imp;
                         }
                     });
                 }
-            }
 
-            // Add internal modules to the list
-            modules.push(moduleObj);
-            addedModules[module.name] = true;
+                // Get module declarations
+                const foundDeclarations = module.getDeclarations();
+                if (foundDeclarations != null && foundDeclarations.length > 0) {
+                    moduleObj.declarations.push(...foundDeclarations.map((declaration) => declaration.name));
+                }
+
+                // Check the symbol has been analysed before accessing the analysis
+                if (module.isAnalysed === false) {
+                    module.analyse();
+                }
+                
+                // Get the providers data, if present
+                const providersCopy: any = module.analysis?.providers;
+                if (providersCopy != null) {
+                    if (providersCopy.elements != null && providersCopy.elements.length > 0) {
+                        providersCopy.elements.forEach((elem: any) => {
+                            if (elem.escapedText != null && elem.escapedText != '' && !moduleObj.providers.includes(elem.escapedText)) {
+                                moduleObj.providers.push(elem.escapedText);
+                            }
+                        });
+                    }
+                }
+
+                // Add internal modules to the list
+                modules.push(moduleObj);
+                addedModules[module.name] = true;
+            });
+
+            // Handle imported modules (external)
+            for (const [key, value] of Object.entries(importedModules)) {
+                if (!(addedModules[key] === true)) {
+                    modules.push({
+                        name: key,
+                        path: value.path,
+                        internal: false,
+                        declarations: [],
+                        imports: [],
+                        providers: [],
+                    } as ProjectModule);
+                    addedModules[key] = true;
+                }
+            }
+            resolve(modules);
         });
-
-        // Handle imported modules (external)
-        for (const [key, value] of Object.entries(importedModules)) {
-            if (!(addedModules[key] === true)) {
-                modules.push({
-                    name: key,
-                    path: value.path,
-                    internal: false,
-                    declarations: [],
-                    imports: [],
-                    providers: [],
-                } as ProjectModule);
-                addedModules[key] = true;
-            }
-        }
-        this.projectModules = modules;
     }
 
     /**
      * Gets project components.
+     * @returns Promise with ProjectComponent array once all actions are completed.
      */
-    private resolveProjectComponents(): void {
-        const components: ProjectComponent[] = [];
-        this.workspaceSymbols.getAllComponents().forEach((component) => {
-            // Create a basic object
-            const componentObj: ProjectComponent = {
-                name: component.name,
-                path: component.path,
-                selector: undefined,
-                changeDetection: undefined,
-                injectedDependencies: [],
-                inputs: [],
-                outputs: [],
-            };
+    private resolveProjectComponents(): Promise<ProjectComponent[]> {
+        return new Promise<ProjectComponent[]>((resolve) => {
+            const components: ProjectComponent[] = [];
+            this.workspaceSymbols.getAllComponents().forEach((component) => {
+                // Create a basic object
+                const componentObj: ProjectComponent = {
+                    name: component.name,
+                    path: component.path,
+                    selector: undefined,
+                    changeDetection: undefined,
+                    injectedDependencies: [],
+                    inputs: [],
+                    outputs: [],
+                };
 
-            // Update selector and change detection properties
-            if (component.metadata != null) {
-                componentObj.selector = component.metadata.selector == null ? undefined : component.metadata.selector;
-                componentObj.changeDetection = component.metadata.changeDetection === undefined || component.metadata.changeDetection === 1 ? 'Default' : 'OnPush';
-            }
+                // Update selector and change detection properties
+                if (component.metadata != null) {
+                    componentObj.selector = component.metadata.selector == null ? undefined : component.metadata.selector;
+                    componentObj.changeDetection = component.metadata.changeDetection === undefined || component.metadata.changeDetection === 1 ? 'Default' : 'OnPush';
+                }
 
-            // Find injected dependencies of component and add their names to the list
-            const componentCopy: any = component;
-            if (componentCopy.deps != null && componentCopy.deps.length > 0) {
-                componentCopy.deps.forEach((dep: any) => {
-                    const dependency = dep?.token?.value;
-                    if (dependency != null && dependency.name != '' && !componentObj.injectedDependencies.includes(dependency.name)) {
-                        componentObj.injectedDependencies.push(dependency.name);
-                    }
-                });
-            }
+                // Find injected dependencies of component and add their names to the list
+                const componentCopy: any = component;
+                if (componentCopy.deps != null && componentCopy.deps.length > 0) {
+                    componentCopy.deps.forEach((dep: any) => {
+                        const dependency = dep?.token?.value;
+                        if (dependency != null && dependency.name != '' && !componentObj.injectedDependencies.includes(dependency.name)) {
+                            componentObj.injectedDependencies.push(dependency.name);
+                        }
+                    });
+                }
 
-            // Find inputs and outputs of the component
-            if (component.metadata?.inputs != null) {
-                for (const [key, value] of Object.entries(component.metadata?.inputs)) {
-                    if (!componentObj.inputs.includes(key)) {
-                        componentObj.inputs.push(key);
+                // Find inputs and outputs of the component
+                if (component.metadata?.inputs != null) {
+                    for (const [key, value] of Object.entries(component.metadata?.inputs)) {
+                        if (!componentObj.inputs.includes(key)) {
+                            componentObj.inputs.push(key);
+                        }
                     }
                 }
-            }
-            if (component.metadata?.outputs != null) {
-                for (const [key, value] of Object.entries(component.metadata?.outputs)) {
-                    if (!componentObj.outputs.includes(key)) {
-                        componentObj.outputs.push(key);
+                if (component.metadata?.outputs != null) {
+                    for (const [key, value] of Object.entries(component.metadata?.outputs)) {
+                        if (!componentObj.outputs.includes(key)) {
+                            componentObj.outputs.push(key);
+                        }
                     }
                 }
-            }
 
-            // Add the component to the list
-            components.push(componentObj);
+                // Add the component to the list
+                components.push(componentObj);
+            });
+            resolve(components);
         });
-        this.projectComponents = components;
     }
 
     /**
      * Gets project injectables (services).
+     * @returns Promise with ProjectInjectable array once all actions are completed.
      */
-    private resolveProjectInjectables(): void {
-        const injectables: ProjectInjectable[] = [];
-        // Map details from all found injectables
-        this.workspaceSymbols.getAllInjectable().forEach((injectable) => {
-            // Create a basic object
-            const injectableObj: ProjectInjectable = {
-                name: injectable.name,
-                path: injectable.path,
-                providedIn: undefined,
-            };
+    private resolveProjectInjectables(): Promise<ProjectInjectable[]> {
+        return new Promise<ProjectInjectable[]>((resolve) => {
+            const injectables: ProjectInjectable[] = [];
+            // Map details from all found injectables
+            this.workspaceSymbols.getAllInjectable().forEach((injectable) => {
+                // Create a basic object
+                const injectableObj: ProjectInjectable = {
+                    name: injectable.name,
+                    path: injectable.path,
+                    providedIn: undefined,
+                };
 
-            // Check the symbol has been analysed before accessing the analysis
-            if (injectable.isAnalysed === false) {
-                injectable.analyse();
-            }
-            
-            // Get the providedIn data, if present
-            const providedInCopy: any = injectable.analysis?.meta.providedIn;
-            if (providedInCopy != null) {
-                if (providedInCopy.node.text != null || providedInCopy.node.text != '') {
-                    injectableObj.providedIn = providedInCopy.node.text;
+                // Check the symbol has been analysed before accessing the analysis
+                if (injectable.isAnalysed === false) {
+                    injectable.analyse();
                 }
-            }
+                
+                // Get the providedIn data, if present
+                const providedInCopy: any = injectable.analysis?.meta.providedIn;
+                if (providedInCopy != null) {
+                    if (providedInCopy.node.text != null || providedInCopy.node.text != '') {
+                        injectableObj.providedIn = providedInCopy.node.text;
+                    }
+                }
 
-            // Add injectable to list
-            injectables.push(injectableObj);
+                // Add injectable to list
+                injectables.push(injectableObj);
+            });
+            resolve(injectables);
         });
-        this.projectInjectables = injectables;
     }
 
     /**

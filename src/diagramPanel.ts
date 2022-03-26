@@ -65,10 +65,12 @@ export class DiagramPanel {
             } else if (message.command === 'SYNC-FILE-CHANGES') {
                 // Resolve all workspace symbols to include any new changes in the project
                 const projectElements: ProjectElements = ProjectElements.getInstance();
-                projectElements.resolveAllWorkspaceSymbols();
-                // Create new diagram metadata and send to panel to display
-                projectElements.generateDiagramMetadata(this._transparentCanvas);
-                this.showDiagramOnPanel(projectElements.diagramMetadata);
+                projectElements.resolveAllWorkspaceSymbols().then(() => {
+                    // Create new diagram metadata and send to panel to display
+                    return projectElements.generateDiagramMetadata(this._transparentCanvas);
+                }).then(() => {
+                    this.showDiagramOnPanel(projectElements.diagramMetadata);
+                });
             } else if (message.command === 'FILTER-NODE-GROUPS') {
                 // Get group states sent from webview and filter to find groups to remove
                 const groupStates: { group: string, state: boolean }[] = message.data;
