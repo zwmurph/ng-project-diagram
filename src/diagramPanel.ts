@@ -96,6 +96,8 @@ export class DiagramPanel {
                 
                 // Send new options back to webview
                 this._panel.webview.postMessage({ command: 'SET-LABEL-OPTIONS', data: newFontColour });
+            } else if (message.command === 'LOAD-TIME') {
+                vscode.window.showInformationMessage(`Network loaded! (${message.data}ms).`);
             }
         });
     }
@@ -126,13 +128,15 @@ export class DiagramPanel {
      * Shows a diagram on the webview panel.
      * @param diagramMetadata Metadata of the network.
      * @param resetUI Optional parameter to trigger a UI reset on the webview.
+     * @param executionStartTime Optional parameter, if wanting to calculate load time of network.
      */
-    public showDiagramOnPanel(diagramMetadata: ProjectDiagramMetadata, resetUI?: boolean): void {
+    public showDiagramOnPanel(diagramMetadata: ProjectDiagramMetadata, resetUI?: boolean, executionStartTime?: number): void {
         // Send serialized JSON to the webview
         this._panel.webview.postMessage({
             command: 'DISPLAY-DIAGRAM',
             data: diagramMetadata,
-            highContrastTheme: vscode.window.activeColorTheme.kind === 3
+            highContrastTheme: vscode.window.activeColorTheme.kind === 3,
+            executionStartTime
         });
         if (resetUI === true) {
             this._panel.webview.postMessage({ command: 'RESET-UI' });
@@ -391,7 +395,7 @@ export class DiagramPanel {
                         </div>
                     </div>
                 </div>
-                <div id="project-network"></div>
+                <div id="project-network">Loading...</div>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>
             </html>
