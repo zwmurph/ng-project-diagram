@@ -32,7 +32,7 @@
 
 - VS Code theme colour change detection is not automatic. When switching between light, dark, or high-contrast themes, you will need to trigger a `quick-reset` to the network for navigation controls and symbol label colours to update.
 
-## Release Notes
-
-#### 0.1.0
-- Initial release.
+## Other
+This project uses the following libraries, you should go check them out:
+- ngast - https://github.com/mgechev/ngast
+- vis-network - https://github.com/visjs/vis-network
