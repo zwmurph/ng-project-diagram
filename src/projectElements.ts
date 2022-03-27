@@ -308,7 +308,7 @@ export class ProjectElements {
                 // Get module declarations
                 const foundDeclarations = module.getDeclarations();
                 if (foundDeclarations != null && foundDeclarations.length > 0) {
-                    moduleObj.declarations.push(...foundDeclarations.map((declaration) => declaration.name));
+                    moduleObj.declarations.push(...foundDeclarations.map((declaration) => declaration?.name));
                 }
 
                 // Check the symbol has been analysed before accessing the analysis
@@ -321,7 +321,7 @@ export class ProjectElements {
                 if (providersCopy != null) {
                     if (providersCopy.elements != null && providersCopy.elements.length > 0) {
                         providersCopy.elements.forEach((elem: any) => {
-                            if (elem.escapedText != null && elem.escapedText != '' && !moduleObj.providers.includes(elem.escapedText)) {
+                            if (elem != null && elem.escapedText != null && elem.escapedText != '' && !moduleObj.providers.includes(elem.escapedText)) {
                                 moduleObj.providers.push(elem.escapedText);
                             }
                         });
@@ -372,8 +372,8 @@ export class ProjectElements {
 
                 // Update selector and change detection properties
                 if (component.metadata != null) {
-                    componentObj.selector = component.metadata.selector == null ? undefined : component.metadata.selector;
-                    componentObj.changeDetection = component.metadata.changeDetection === undefined || component.metadata.changeDetection === 1 ? 'Default' : 'OnPush';
+                    componentObj.selector = component.metadata?.selector == null ? undefined : component.metadata.selector;
+                    componentObj.changeDetection = component.metadata?.changeDetection === undefined || component.metadata?.changeDetection === 1 ? 'Default' : 'OnPush';
                 }
 
                 // Find injected dependencies of component and add their names to the list
@@ -434,7 +434,7 @@ export class ProjectElements {
                 // Get the providedIn data, if present
                 const providedInCopy: any = injectable.analysis?.meta.providedIn;
                 if (providedInCopy != null) {
-                    if (providedInCopy.node.text != null || providedInCopy.node.text != '') {
+                    if (providedInCopy.node != null && providedInCopy.node.text != null && providedInCopy.node.text != '') {
                         injectableObj.providedIn = providedInCopy.node.text;
                     }
                 }
